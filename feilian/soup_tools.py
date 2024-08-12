@@ -63,6 +63,10 @@ def _clean_html_with_soup(element, debug=False):
         if "href" in element.attrs and element.attrs["href"].startswith("javascript:"):
             del element.attrs["href"]
 
+        # 移除 img src
+        if element.name == "img" and "src" in element.attrs:
+            del element.attrs["src"]
+
 
 def clean_html(soup: BeautifulSoup, debug: bool = False):
     deep_first_travel(soup, lambda x: _clean_html_with_soup(x, debug=debug))
@@ -70,9 +74,6 @@ def clean_html(soup: BeautifulSoup, debug: bool = False):
 
 
 def extract_html_structure(soup: BeautifulSoup):
-    soup = deepcopy(soup)
-    soup = clean_html(soup)
-
     for element in soup.find_all():
         if isinstance(element, bs4.element.Tag):
             # only keep class and id attributes
@@ -102,20 +103,30 @@ def deep_first_travel(element: bs4.element.Tag, callback):
     callback(element)
 
 
-def keep_unique_structure(element: bs4.element.Tag):
+def _keep_unique_structure(element: bs4.element.Tag):
     if not isinstance(element, bs4.element.Tag):
         return
 
+    # 这里相当于浅拷贝，使用 element.contents 会导致 clear() 时 contents 也被清空
     children = list(element.children)
     if not children or len(children) == 1:
         return
 
-    # keep the first 2 children if they are table and tr
+    if element.name == "li":
+        return
+
+    # keep the first child if they are tr with td or th
+    is_tr_with_td = element.name == "tr" and children[0].name == "td"
+    is_tr_with_th = element.name == "tr" and children[0].name == "th"
+    if is_tr_with_td or is_tr_with_th:
+        return
+
+    # keep the first child if they are table and tr
     is_table_with_tr = element.name == "table" and children[0].name == "tr"
     is_tbody_with_tr = element.name == "tbody" and children[0].name == "tr"
     if is_table_with_tr or is_tbody_with_tr:
         element.clear()
-        element.extend(children[:2])
+        element.extend(children[:1])
         return
 
     # keep the first child if they are ul and li
@@ -123,7 +134,7 @@ def keep_unique_structure(element: bs4.element.Tag):
     is_ol_with_li = element.name == "ol" and children[0].name == "li"
     if is_ul_with_li or is_ol_with_li:
         element.clear()
-        element.append(children[0])
+        element.extend(children[:1])
         return
 
     # if every child has the same structure, keep the first one
@@ -151,6 +162,17 @@ def keep_unique_structure(element: bs4.element.Tag):
 
         element.clear()
         element.extend(keep_children)
+
+
+def get_structure(html_content: str, unique=True):
+    soup = BeautifulSoup(html_content, "html5lib")
+    clean_html(soup)
+
+    structure = extract_html_structure(soup)
+    if unique:
+        deep_first_travel(structure, _keep_unique_structure)
+
+    return structure
 
 
 def _is_same_element(e1: bs4.element.Tag, e2: bs4.element.Tag):
@@ -203,7 +225,9 @@ def prune_by_structure(origin: BeautifulSoup, structure: BeautifulSoup):
             continue
 
     # 删除多余的节点
-    origin.contents = origin.contents[:origin_i]
+    children = list(origin.children)
+    origin.clear()
+    origin.extend(children[:origin_i])
 
 
 def prune_by_tokens(
