@@ -12,6 +12,7 @@ from feilian.soup_tools import (
     clean_html,
     get_structure,
     prune_by_structure,
+    extract_tables_recursive,
 )
 
 SWDE_DATA_ROOT = "data/swde"
@@ -278,27 +279,40 @@ def swde__plot_failure(dataset_file_path: str, group_by):
     pass
 
 
+def swde__extract_table_row(row):
+    html_file_path = os.path.join(SWDE_DATA_ROOT, row["file_path"])
+    html_content = open(html_file_path, "r").read()
+    soup = bs4.BeautifulSoup(html_content, "html5lib")
+    tables = extract_tables_recursive(soup)
+
+    row["tables"] = json.dumps(tables)
+
+    return row
+
+
+def swde__extract_tables(file_path: str):
+    from pandarallel import pandarallel
+
+    pandarallel.initialize(progress_bar=True, nb_workers=6)
+
+    df = pd.read_csv(file_path, index_col=0)
+    # df = df[(df["category"] == "university") & (df["site"] == "embark")]
+
+    df = df.parallel_apply(swde__extract_table_row, axis=1)
+    df.to_csv("swde_extracted_tables.csv")
+    pass
+
+
 if __name__ == "__main__":
-    # swde__test_file(
-    #     "data/swde/sourceCode/sourceCode/job/job-careerbuilder(2000)/0947.htm"
+    swde__extract_tables("swde_token_stats_with_structure.csv")
+
+    # structure, cleaned_html = read_and_structure_html(
+    #     "sourceCode/sourceCode/restaurant/restaurant-pickarestaurant(2000)/0000.htm"
     # )
 
-    # swde__token_dist("swde_token_stats_with_structure.csv", target_col="cleaned_tokens")
-    # swde__token_dist(
-    #     "swde_token_stats_with_structure.csv", target_col="structure_tokens"
-    # )
-    # swde__plot_failure(
-    #     "swde_token_stats_with_structure.csv", group_by=["category", "site"]
-    # )
+    # with open("test.html", "w") as f:
+    #     f.write(cleaned_html)
 
-    # swde__stats_structure_pruning("swde_token_stats.csv")
-    structure, cleaned_html = read_and_structure_html(
-        "sourceCode/sourceCode/restaurant/restaurant-pickarestaurant(2000)/0000.htm"
-    )
-
-    with open("test.html", "w") as f:
-        f.write(cleaned_html)
-
-    with open("structure_test.html", "w") as f:
-        f.write(structure)
+    # with open("structure_test.html", "w") as f:
+    #     f.write(structure)
     pass

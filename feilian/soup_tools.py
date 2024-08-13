@@ -103,6 +103,88 @@ def deep_first_travel(element: bs4.element.Tag, callback):
     callback(element)
 
 
+def breadth_first_travel(element: bs4.element.Tag, callback, is_interrupt=False):
+    queue = [element]
+    while queue:
+        current = queue.pop(0)
+
+        if is_interrupt and callback(current):
+            continue
+
+        queue.extend(
+            child for child in current.children if isinstance(child, bs4.element.Tag)
+        )
+
+
+# table = {
+#     "xpath": '//*[@id="content"]/',
+#     "content": "<table></table>",
+#     "title": "content",  # possible
+#     "children": [{}],
+# }
+
+
+def get_table_title(element: bs4.element.Tag):
+    if element.name == "table":
+        title = element.find("caption")
+        if title:
+            return title.get_text().strip()
+
+    if element.previousSibling:
+        return element.previousSibling.get_text().strip()
+
+    return None
+
+
+def extract_tables(element: bs4.element.Tag):
+    """从当前元素中提取一层表格。"""
+    tables = []
+
+    def _extract(el: bs4.element.Tag):
+        if el.name == "table":
+            tables.append(
+                {
+                    "xpath": get_xpath(el),
+                    "content": el.prettify().strip(),
+                    "title": get_table_title(el),
+                    "children": [],
+                }
+            )
+            return True
+        return False
+
+    breadth_first_travel(element, _extract, is_interrupt=True)
+
+    return tables
+
+
+def extract_tables_recursive(element: bs4.element.Tag):
+    """从当前元素中递归提取表格。"""
+    tables = []
+
+    def _extract(el: bs4.element.Tag):
+        if el.name == "table":
+            child_tables = []
+            for child in el.children:
+                if isinstance(child, bs4.element.Tag):
+                    child_tables += extract_tables_recursive(child)
+
+            tables.append(
+                {
+                    "xpath": get_xpath(el),
+                    "content": el.prettify().strip(),
+                    "title": get_table_title(el),
+                    "children": child_tables,
+                }
+            )
+            return True
+        return False
+
+    breadth_first_travel(element, _extract, is_interrupt=True)
+
+    return tables
+
+
 def _keep_unique_structure(element: bs4.element.Tag):
     if not isinstance(element, bs4.element.Tag):
         return
@@ -287,6 +369,28 @@ def extract_left_subset(
     soup = deepcopy(soup)
     prune_by_tokens(tokenizer, soup, max_tokens, reversed=False)
     return soup
+
+
+def get_xpath(element):
+    components = []
+    target = element if element.name else element.parent
+    for node in (target, *target.parents)[-2::-1]:
+        tag = "%s:%s" % (node.prefix, node.name) if node.prefix else node.name
+        siblings = node.parent.find_all(tag, recursive=False)
+        components.append(
+            tag
+            if len(siblings) == 1
+            else "%s[%d]"
+            % (
+                tag,
+                next(
+                    index
+                    for index, sibling in enumerate(siblings, 1)
+                    if sibling is node
+                ),
+            )
+        )
+    return "/%s" % "/".join(components)
 
 
 if __name__ == "__main__":
