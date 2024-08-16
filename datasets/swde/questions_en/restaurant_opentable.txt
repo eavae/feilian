@@ -1,0 +1,11 @@
+What is the JSON representation of the restaurant's address, cuisine type, name, and phone number based on the provided context?
+
+JSON:
+```json
+{
+  "address": ["15045 N. Kierland Blvd.", "Scottsdale, AZ 85254"],
+  "cuisine": [": Steakhouse, Seafood"],
+  "name": ["Mastro's Ocean Club - Scottsdale"],
+  "phone": [": (480) 443-8555"]
+}
+```

@@ -1,0 +1,10 @@
+Please provide the JSON representation of the restaurant's details including address, cuisine, name, and phone number, using the following format:
+
+```json
+{
+  "address": ["...", "..."],
+  "cuisine": ["..."],
+  "name": ["..."],
+  "phone": ["..."]
+}
+```

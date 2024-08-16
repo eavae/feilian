@@ -1,0 +1,10 @@
+What is the JSON representation of the movie's director, genre, MPAA rating, and title based on the given context?
+
+```json
+{
+  "director": ["Stanley Kubrick"],
+  "genre": ["Comedy"],
+  "mpaa_rating": ["N"],
+  "title": ["Dr. Strangelove or How I Learned to Stop Worrying and Love the Bomb"]
+}
+```

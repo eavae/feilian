@@ -1,0 +1,9 @@
+What is the JSON representation of the manufacturer, model, and price of the digital camera described in the context?
+
+```json
+{
+  "manufacturer": ["..."],
+  "model": ["...", "..."],
+  "price": ["..."]
+}
+```

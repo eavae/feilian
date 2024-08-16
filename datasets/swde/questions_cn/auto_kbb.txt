@@ -1,0 +1,15 @@
+请提供以下信息关于特定型号卡车的详细数据，格式为JSON：
+- 引擎类型和排量
+- 燃油经济性
+- 型号名称
+- 价格
+
+答案格式示例：
+```json
+{
+  "engine": ["V8, 6.0 Liter"],
+  "fuel_economy": ["-"],
+  "model": ["2010 Chevrolet Silverado 3500 HD Crew Cab Highlights", "2010 Chevrolet Silverado 3500 HD Crew Cab 4-door LT Pickup"],
+  "price": ["$38,735.00"]
+}
+```

@@ -1,0 +1,11 @@
+请提供以下信息关于一部由特定作者创作的图形小说，该小说以快速文本版本出版，并在特定日期由特定出版社发布。请以JSON格式回答，包含以下字段：作者（author）、ISBN-13（isbn_13）、出版日期（publication_date）、出版社（publisher）和标题（title）。
+
+```json
+{
+  "author": ["作者姓名"],
+  "isbn_13": ["ISBN-13号码"],
+  "publication_date": ["出版日期"],
+  "publisher": ["出版社名称"],
+  "title": ["图形小说标题"]
+}
+```

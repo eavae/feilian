@@ -1,0 +1,10 @@
+What is the JSON representation of the vehicle's engine specifications, fuel economy, model, and price based on the provided context?
+
+```json
+{
+  "engine": ["6.2L V8, 16 valves, 411 hp @ 5500 rpm"],
+  "fuel_economy": ["NL mpg city / NL mpg hwy"],
+  "model": ["2011 Ford F-150 SuperCrew 4X4"],
+  "price": ["$50,340"]
+}
+```

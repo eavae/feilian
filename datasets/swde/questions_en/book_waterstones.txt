@@ -1,0 +1,11 @@
+What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["Max Arthur"],
+  "isbn_13": ["9780091888879"],
+  "publication_date": ["02/10/2003"],
+  "publisher": ["Ebury Press"],
+  "title": ["Forgotten Voices of the Great War: A New History of WWI in the Words of the Men and Women Who Were There"]
+}
+```

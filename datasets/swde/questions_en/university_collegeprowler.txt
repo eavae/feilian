@@ -1,0 +1,10 @@
+Based on the provided context, please provide the contact information, type, and website of the institution in JSON format. Here is the JSON structure to follow:
+
+```json
+{
+  "name": ["..."],
+  "phone": ["..."],
+  "type": ["..."],
+  "website": ["..."]
+}
+```

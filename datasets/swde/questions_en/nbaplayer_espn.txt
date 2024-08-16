@@ -1,0 +1,10 @@
+What is the JSON representation of the player's height, name, team, and weight based on the provided context?
+
+```json
+{
+  "height": ["6-10"],
+  "name": ["Kendrick Perkins  #43  C"],
+  "team": ["Boston Celtics"],
+  "weight": ["280 lbs."]
+}
+```

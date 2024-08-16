@@ -1,0 +1,11 @@
+请提供一个特定大学的名称、电话号码、类型和网站地址，以JSON格式回答。
+
+答案格式示例：
+```json
+{
+  "name": ["University Name"],
+  "phone": ["Phone Number"],
+  "type": ["Type of Institution"],
+  "website": ["Website URL"]
+}
+```

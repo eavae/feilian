@@ -1,0 +1,11 @@
+Based on the provided context, could you provide a JSON object containing the details of the book "Girls Like Us" by Sheila Weller, including the author, ISBN-13, publication date, publisher, and title? The JSON should follow this format:
+
+```json
+{
+  "author": ["Sheila Weller"],
+  "isbn_13": ["9780743491488"],
+  "publication_date": ["Pub. Date: April 2009"],
+  "publisher": ["Publisher: Simon & Schuster Adult Publishing Group"],
+  "title": ["Girls Like Us"]
+}
+```

@@ -1,0 +1,11 @@
+请提供以下关于一本书的详细信息，格式为JSON：
+
+```json
+{
+  "author": ["作者名"],
+  "isbn_13": ["13位ISBN码"],
+  "publication_date": ["出版日期"],
+  "publisher": ["出版社"],
+  "title": ["书名"]
+}
+```

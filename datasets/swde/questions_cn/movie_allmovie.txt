@@ -1,0 +1,15 @@
+请提供以下信息关于一部著名电影的详细数据，格式为JSON：
+- 导演（director）
+- 类型（genre）
+- MPAA评级（mpaa_rating）
+- 标题（title）
+
+回答格式示例：
+```json
+{
+  "director": ["导演名"],
+  "genre": ["类型"],
+  "mpaa_rating": ["评级"],
+  "title": ["电影标题"]
+}
+```

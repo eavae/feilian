@@ -1,0 +1,10 @@
+Given the JSON data provided, what are the details of the digital camera including its manufacturer, model names, and price?
+
+JSON Data:
+```json
+{
+  "manufacturer": ["Panasonic"],
+  "model": ["Panasonic Lumix DMC-TZ5 Point & Shoot Digital Camera - Black", "Lumix DMC-TZ5 Point & Shoot Digital Camera"],
+  "price": ["$193.17"]
+}
+```

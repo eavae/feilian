@@ -1,0 +1,10 @@
+What is the JSON representation of the vehicle specifications including engine type, fuel economy, model, and price as listed in the context?
+
+```json
+{
+  "engine": ["..."],
+  "fuel_economy": ["..."],
+  "model": ["..."],
+  "price": ["..."]
+}
+```

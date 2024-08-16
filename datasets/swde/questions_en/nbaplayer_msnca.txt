@@ -1,0 +1,1 @@
+Given the context provided in the HTML table from the NBA player stats page, please extract the following information about the player in JSON format: height, name, team, and weight. The JSON should be structured as follows: `{"height": ["6-8"], "name": ["LeBron James"], "team": ["Miami Heat"], "weight": ["250"]}`.

@@ -1,9 +1,12 @@
 import bs4
 import re
+import html
+from typing import List
 from bs4 import BeautifulSoup
 from copy import deepcopy, copy
 from tokenizers import Tokenizer
 from urllib.parse import unquote
+from collections import defaultdict
 
 from feilian.tools import find_most_repeated_sub_sequence_html
 from feilian.html_constants import INLINE_ELEMENTS, INTERACTIVE_ELEMENTS
@@ -183,6 +186,58 @@ def extract_tables_recursive(element: bs4.element.Tag):
     breadth_first_travel(element, _extract, is_interrupt=True)
 
     return tables
+
+
+def get_tables_depth(tables: list):
+    if not tables:
+        return 0
+
+    def _get_depth(table, depth):
+        if not table["children"]:
+            return depth
+
+        return max(_get_depth(child, depth + 1) for child in table["children"])
+
+    return max(_get_depth(table, 1) for table in tables)
+
+
+def get_tables_width(tables: list):
+    if not tables:
+        return 0
+
+    def _get_width(table):
+        if not table["children"]:
+            return 1
+
+        return sum(_get_width(child) for child in table["children"])
+
+    return sum(_get_width(table) for table in tables)
+
+
+def get_tables_max_width(tables: list):
+    if not tables:
+        return 0
+
+    def _get_width(table):
+        if not table["children"]:
+            return 1
+
+        return max(_get_width(child) for child in table["children"])
+
+    return max(_get_width(table) for table in tables)
+
+
+def get_tables_count(tables: list):
+    if not tables:
+        return 0
+
+    def _get_count(table):
+        if not table["children"]:
+            return 1
+
+        return sum(_get_count(child) for child in table["children"])
+
+    return sum(_get_count(table) for table in tables)
 
 
 def _keep_unique_structure(element: bs4.element.Tag):
@@ -391,6 +446,52 @@ def get_xpath(element):
             )
         )
     return "/%s" % "/".join(components)
+
+
+def get_node_depth(node: bs4.element.Tag):
+    depth = 0
+    while node.parent:
+        node = node.parent
+        depth += 1
+    return depth
+
+
+def get_node_contain_text(soup: BeautifulSoup, text: str):
+    text = html.unescape(text)
+    text = html.unescape(text)
+    text = re.sub(r"\s+", " ", text)
+
+    d = defaultdict(int)
+    for node in reversed(soup.find("body").find_all(text=True)):
+        target = str(node).strip()
+        if not target:
+            continue
+
+        target = html.unescape(target)
+        target = html.unescape(target)
+        target = re.sub(r"\s+", " ", target).strip()
+
+        if text in target:
+            d[node] = get_node_depth(node)
+
+    if d:
+        return max(d, key=d.get)
+    return None
+
+
+def get_common_ancestor(nodes: List[bs4.element.Tag]):
+    if not nodes:
+        return None
+
+    common_ancestor = nodes[0]
+    for node in nodes[1:]:
+        node_parents = list(node.parents)
+        for parent in [common_ancestor] + list(common_ancestor.parents):
+            if parent in node_parents:
+                common_ancestor = parent
+                break
+
+    return common_ancestor
 
 
 if __name__ == "__main__":

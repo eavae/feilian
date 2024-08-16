@@ -1,0 +1,10 @@
+Please provide the JSON representation of the film's director, genre, MPAA rating, and title, using the following format:
+
+```json
+{
+  "director": ["..."],
+  "genre": ["...", "..."],
+  "mpaa_rating": ["..."],
+  "title": ["... (...)"]
+}
+```

@@ -1,0 +1,10 @@
+What are the specifications and pricing details of the vehicle described in the overview, formatted as a JSON object?
+
+```json
+{
+  "engine": ["..."],
+  "fuel_economy": ["..."],
+  "model": ["..."],
+  "price": ["..."]
+}
+```

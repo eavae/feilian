@@ -1,0 +1,4 @@
+请提供一所大学的名称、联系电话、类型和官方网站链接，以JSON格式回答。
+
+答案：
+{"name": ["University of Minnesota-Twin Cities"], "phone": ["(612) 625-5000"], "type": ["4-year, Public"], "website": ["www1.umn.edu/twincities/index.php"]}

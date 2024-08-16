@@ -1,0 +1,6 @@
+请提供以下信息关于一本历史书籍的详细信息，格式为JSON：
+- 作者（author）
+- ISBN-13编号（isbn_13）
+- 出版日期（publication_date）
+- 出版社（publisher）
+- 书名（title）

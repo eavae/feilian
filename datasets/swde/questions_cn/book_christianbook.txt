@@ -1,0 +1,17 @@
+请提供以下关于某本新约圣经评论书籍的信息，格式为JSON：
+- 作者（author）
+- ISBN-13编号（isbn_13）
+- 出版日期（publication_date）
+- 出版社（publisher）
+- 书名（title）
+
+答案格式示例：
+```json
+{
+  "author": ["作者名"],
+  "isbn_13": ["ISBN-13编号"],
+  "publication_date": ["出版日期"],
+  "publisher": ["出版社"],
+  "title": ["书名"]
+}
+```

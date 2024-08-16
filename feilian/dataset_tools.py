@@ -3,10 +3,16 @@ import py7zr
 import re
 import pandas as pd
 import json
-import numpy as np
+import bs4
 from pathlib import Path
 from tqdm import tqdm
 from collections import defaultdict
+from minify_html import minify
+from langchain_openai.chat_models import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+from feilian.soup_tools import get_node_contain_text, get_common_ancestor, clean_html
+from feilian.prompts import QUESTION_CONSTRUCTION_EN
 
 
 def remove_hidden_files(src_folder, exclude_files=None):
@@ -139,10 +145,57 @@ def swde__convert_to_parquet(root_folder: str, save_to: str):
     df.to_parquet(save_to)
 
 
-if __name__ == "__main__":
-    swde__convert_to_parquet(
-        "data/swde",
-        "datasets/swde.parquet",
-    )
-    df = pd.read_parquet("datasets/swde.parquet")
+def swde__construct_question(file_path: str):
+    """为SWDE数据集中的每个类别构造问题，比如：auto
+
+    Args:
+        file_path (str): _description_
+    """
+
+    # construct question using langchain
+    llm = ChatOpenAI(model="deepseek-chat", temperature=0.1)
+    template = ChatPromptTemplate.from_messages([("human", QUESTION_CONSTRUCTION_EN)])
+    chain = template | llm
+
+    df = pd.read_csv(file_path, index_col=0)
+    for group, frame in df.groupby(["category", "site"]):
+        save_to = f"datasets/swde/questions_en/{'_'.join(group)}.txt"
+        if os.path.exists(save_to):
+            continue
+
+        # sort by cleaned_tokens
+        frame = frame.sort_values("cleaned_tokens", ascending=False)
+        row = frame.iloc[0]
+
+        # read html
+        html_file = os.path.join("data/swde", row["file_path"])
+        raw_html = open(html_file, "r").read()
+        soup = bs4.BeautifulSoup(raw_html, "html5lib")
+
+        # find target nodes
+        target_texts = []
+        for values in json.loads(row["attributes"]).values():
+            target_texts.extend(values)
+        nodes = [get_node_contain_text(soup, x) for x in target_texts]
+        nodes = [x for x in nodes if x]
+
+        # get common ancestor
+        node = get_common_ancestor(nodes)
+        cleaned_node = clean_html(node)
+        cleaned_html = minify(cleaned_node.prettify().strip())
+
+        question = chain.invoke(
+            {
+                "answer_str": row["attributes"],
+                "context_str": cleaned_html,
+            }
+        )
+
+        with open(save_to, "w") as f:
+            f.write(question.content)
+            f.write("\n")
     pass
+
+
+if __name__ == "__main__":
+    swde__construct_question("swde_token_stats.csv")

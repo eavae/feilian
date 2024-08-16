@@ -1,0 +1,9 @@
+Based on the provided context, please extract the relevant details about the subject and format them in JSON. The JSON should include the keys `address`, `name`, and `phone`, with their respective values as arrays of strings. Here is the JSON structure to follow:
+
+```json
+{
+  "address": ["...", "...", "...", "...", "..."],
+  "name": ["..."],
+  "phone": ["..."]
+}
+```

@@ -1,0 +1,10 @@
+What is the JSON representation of the book details for the first result in the search results container?
+
+```json
+{
+  "author": ["...", "..."],
+  "isbn_13": ["...", "..."],
+  "publication_date": ["..."],
+  "title": ["..."]
+}
+```

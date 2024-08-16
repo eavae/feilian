@@ -1,0 +1,11 @@
+What is the JSON representation of the general information, website, and type of the institution described in the context?
+
+JSON:
+```json
+{
+  "name": ["..."],
+  "phone": ["..."],
+  "type": ["..."],
+  "website": ["..."]
+}
+```

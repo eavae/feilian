@@ -1,0 +1,9 @@
+Based on the provided context, please provide the manufacturer, model, and price of the product in JSON format.
+
+```json
+{
+  "manufacturer": ["Brand = Sony"],
+  "model": ["Sony DSC-W330 14.1 Megapixel Cyber-shot® Digital Camera W330 - Silver"],
+  "price": ["$149.99"]
+}
+```

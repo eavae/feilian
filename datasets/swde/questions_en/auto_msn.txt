@@ -1,0 +1,10 @@
+What are the specifications and features of the vehicle in JSON format?
+
+```json
+{
+  "engine": ["..."],
+  "fuel_economy": ["...", "..."],
+  "model": ["..."],
+  "price": ["...", "..."]
+}
+```

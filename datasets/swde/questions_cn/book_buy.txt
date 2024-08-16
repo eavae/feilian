@@ -1,0 +1,17 @@
+请提供以下关于一本书的详细信息，格式为JSON：
+- 作者
+- ISBN-13
+- 出版日期
+- 出版社
+- 书名
+
+答案：
+```json
+{
+  "author": ["Takashi Fujitani"],
+  "isbn_13": ["9780520213715"],
+  "publication_date": ["4/1/1998"],
+  "publisher": ["University of California Press"],
+  "title": ["Splendid Monarchy"]
+}
+```

@@ -1,0 +1,10 @@
+请提供以下信息关于一款数码相机的详细数据，格式为JSON：制造商、型号、价格。
+
+答案格式示例：
+```json
+{
+  "manufacturer": ["Sony"],
+  "model": ["Cyber-shot 14.1MP Digital Camera W330 - Black (DSC-W330/B)"],
+  "price": ["$149.99"]
+}
+```

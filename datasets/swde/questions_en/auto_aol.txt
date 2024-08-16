@@ -1,0 +1,9 @@
+What are the fuel economy, model, and price details for the vehicle described in the context, formatted as a JSON response?
+
+```json
+{
+  "fuel_economy": ["..."],
+  "model": ["..."],
+  "price": ["..."]
+}
+```

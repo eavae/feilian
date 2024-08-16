@@ -1,0 +1,8 @@
+请提供一个数码相机的制造商、型号和价格信息，格式如下：
+```json
+{
+  "manufacturer": ["Panasonic", ": Panasonic"],
+  "model": ["Panasonic Lumix DMC-ZS1 10MP Digital Camera with 12x Wide Angle MEGA Optical Image Stabilized Zoom and 2.7 inch LCD (Silver)"],
+  "price": ["$169.90"]
+}
+```

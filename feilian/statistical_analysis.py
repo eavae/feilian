@@ -13,6 +13,10 @@ from feilian.soup_tools import (
     get_structure,
     prune_by_structure,
     extract_tables_recursive,
+    get_tables_depth,
+    get_tables_count,
+    get_tables_max_width,
+    get_tables_width,
 )
 
 SWDE_DATA_ROOT = "data/swde"
@@ -296,15 +300,79 @@ def swde__extract_tables(file_path: str):
     pandarallel.initialize(progress_bar=True, nb_workers=6)
 
     df = pd.read_csv(file_path, index_col=0)
-    # df = df[(df["category"] == "university") & (df["site"] == "embark")]
 
     df = df.parallel_apply(swde__extract_table_row, axis=1)
     df.to_csv("swde_extracted_tables.csv")
-    pass
+
+
+def swde__table_correlation_row(row):
+    tables = json.loads(row["tables"])
+    fns = {
+        "depth": get_tables_depth,
+        "count": get_tables_count,
+        "max_width": get_tables_max_width,
+        "width": get_tables_width,
+    }
+    for k, fn in fns.items():
+        row[k] = fn(tables)
+    return row
+
+
+def swde_table_correlation_analyse(file_path: str):
+    """结论：没有明显的相关性
+
+    Args:
+        file_path (str): _description_
+    """
+    # from pandarallel import pandarallel
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+
+    # pandarallel.initialize(progress_bar=True, nb_workers=4)
+
+    group_by = ["category", "site"]
+
+    df = pd.read_csv(file_path, index_col=0)
+    df = df.apply(swde__table_correlation_row, axis=1)
+
+    df["match_rate"] = df["match_count"] / df["total"]
+    df = df[df["match_rate"] < 1]
+
+    # plot correlation
+    pairs = df[group_by].groupby(group_by).nunique().index
+    n_cols = 8
+    n_rows = len(pairs) // n_cols + 1
+
+    fig = make_subplots(
+        rows=n_rows,
+        cols=n_cols,
+        subplot_titles=[f"{pair}" for pair in pairs],
+    )
+
+    for i, pair in enumerate(pairs):
+        row, col = i // n_cols + 1, i % n_cols + 1
+        pair_df = df[(df[group_by] == pair).all(axis=1)]
+
+        # correlations, match_rate, depth, count, max_width, width
+        corr = pair_df[["match_rate", "depth", "count", "max_width", "width"]].corr()
+        corr.fillna(0, inplace=True)
+
+        fig.add_trace(
+            go.Heatmap(
+                z=corr.values,
+                x=corr.columns,
+                y=corr.columns,
+                colorscale="Viridis",
+                showscale=False,
+            ),
+            row=row,
+            col=col,
+        )
+    fig.show()
 
 
 if __name__ == "__main__":
-    swde__extract_tables("swde_token_stats_with_structure.csv")
+    swde_table_correlation_analyse("swde_extracted_tables.csv")
 
     # structure, cleaned_html = read_and_structure_html(
     #     "sourceCode/sourceCode/restaurant/restaurant-pickarestaurant(2000)/0000.htm"

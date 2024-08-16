@@ -1,0 +1,10 @@
+Please provide the JSON representation of the job posting details, including the company name, date posted, location, and title, using the following format:
+
+```json
+{
+  "company": ["..."],
+  "date_posted": ["..."],
+  "location": ["..."],
+  "title": ["...", "..."]
+}
+```

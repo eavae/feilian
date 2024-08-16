@@ -1,0 +1,10 @@
+What are the specifications of the vehicle including engine types, fuel economy, model year, and price range, formatted as JSON?
+
+```json
+{
+  "engine": ["...", "...", "..."],
+  "fuel_economy": ["..."],
+  "model": ["..."],
+  "price": ["..."]
+}
+```
