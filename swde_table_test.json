@@ -1,0 +1,122 @@
+[
+  {
+    "category": "university",
+    "site": "embark",
+    "page_id": 513,
+    "remove_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/table",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[1]",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[5]"
+    ],
+    "target_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table",
+      "/html/body/form/table/tbody/tr[3]/td[2]/table/tbody/tr/td[2]/table",
+      "/html/body/form/table"
+    ]
+  },
+  {
+    "category": "university",
+    "site": "embark",
+    "page_id": 570,
+    "remove_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/table",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[1]",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[5]"
+    ],
+    "target_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table",
+      "/html/body/form/table/tbody/tr[3]/td[2]/table/tbody/tr/td[2]/table",
+      "/html/body/form/table"
+    ]
+  },
+  {
+    "category": "university",
+    "site": "embark",
+    "page_id": 557,
+    "remove_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/table",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[1]",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[5]"
+    ],
+    "target_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table",
+      "/html/body/form/table/tbody/tr[3]/td[2]/table/tbody/tr/td[2]/table",
+      "/html/body/form/table"
+    ]
+  },
+  {
+    "category": "university",
+    "site": "embark",
+    "page_id": 1955,
+    "remove_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/table",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[1]",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[5]"
+    ],
+    "target_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table",
+      "/html/body/form/table/tbody/tr[3]/td[2]/table/tbody/tr/td[2]/table",
+      "/html/body/form/table"
+    ]
+  },
+  {
+    "category": "university",
+    "site": "embark",
+    "page_id": 1068,
+    "remove_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/table",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[1]",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[5]"
+    ],
+    "target_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table",
+      "/html/body/form/table/tbody/tr[3]/td[2]/table/tbody/tr/td[2]/table",
+      "/html/body/form/table"
+    ]
+  },
+  {
+    "category": "university",
+    "site": "embark",
+    "page_id": 1356,
+    "remove_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/table",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[1]",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[7]"
+    ],
+    "target_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table",
+      "/html/body/form/table/tbody/tr[3]/td[2]/table/tbody/tr/td[2]/table",
+      "/html/body/form/table"
+    ]
+  },
+  {
+    "category": "university",
+    "site": "embark",
+    "page_id": 1847,
+    "remove_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/table",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[1]",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[5]"
+    ],
+    "target_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table",
+      "/html/body/form/table/tbody/tr[3]/td[2]/table/tbody/tr/td[2]/table",
+      "/html/body/form/table"
+    ]
+  },
+  {
+    "category": "university",
+    "site": "embark",
+    "page_id": 1945,
+    "remove_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/table",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[1]",
+      "/html/body/form/table/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[3]/span/table[5]"
+    ],
+    "target_xpaths": [
+      "/html/body/form/table/tbody/tr[2]/td[2]/table",
+      "/html/body/form/table/tbody/tr[3]/td[2]/table/tbody/tr/td[2]/table",
+      "/html/body/form/table"
+    ]
+  }
+]

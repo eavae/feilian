@@ -1,9 +1,9 @@
 from lxml import etree
-from lxml.html import HtmlComment
 from tokenizers import Tokenizer
 from copy import deepcopy
 from urllib.parse import unquote
-from typing import List
+from typing import List, Optional
+from collections import defaultdict
 
 from feilian.html_constants import INTERACTIVE_ELEMENTS
 
@@ -13,6 +13,35 @@ def post_order_traversal(tree: etree._Element, func):
         post_order_traversal(ele, func)
 
     func(tree)
+
+
+def _pre_order_traversal(tree: Optional[etree._Element], xpath, func):
+    if tree is None:
+        return
+
+    # pre-order
+    func(tree, xpath)
+
+    # children
+    tag_counts = defaultdict(int)
+    for ele in tree.iterchildren():
+        tag_counts[ele.tag] += 1
+
+    tag_order = defaultdict(int)
+    for ele in tree.iterchildren():
+        if tag_counts[ele.tag] > 1:
+            _pre_order_traversal(ele, f"{xpath}/{ele.tag}[{tag_order[ele.tag]}]", func)
+        else:
+            _pre_order_traversal(ele, f"{xpath}/{ele.tag}", func)
+        tag_order[ele.tag] += 1
+
+
+def pre_order_traversal(tree: etree._Element | etree._ElementTree, func):
+    if isinstance(tree, etree._ElementTree):
+        root: etree._Element = tree.getroot()
+        _pre_order_traversal(root, f"/{root.tag}", func)
+    else:
+        _pre_order_traversal(tree, f"/{tree.tag}", func)
 
 
 def _remove(element: etree._Element):
@@ -59,8 +88,11 @@ def _clean_html(ele: etree._Element):
             del ele.attrib["src"]
 
 
-def clean_html(ele: etree._Element):
-    post_order_traversal(ele, _clean_html)
+def clean_html(ele: etree._Element | etree._ElementTree):
+    if isinstance(ele, etree._ElementTree):
+        post_order_traversal(ele.getroot(), _clean_html)
+    else:
+        post_order_traversal(ele, _clean_html)
     return ele
 
 
@@ -122,6 +154,93 @@ def prune_by_tokens(
     prune_by_tokens(tokenizer, child, required_tokens - acc_tokens, reversed=reversed)
 
     return ele
+
+
+def parent_xpath(xpath: str):
+    return "/".join(xpath.split("/")[:-1])
+
+
+def get_text_content(ele: etree._Element):
+    arr = []
+    for t in ele.itertext():
+        t = t.strip()
+        if t:
+            arr.append(t)
+    return " ".join(arr)
+
+
+def replace_with_text(ele: etree._Element):
+    text = get_text_content(ele)
+    remove_children(ele)
+    ele.text = text
+
+
+def prune_to_text(ele: etree._Element):
+    """
+    修剪为文本节点
+    """
+    if len(ele) == 0:
+        ele.text = ele.text.strip()
+        return
+
+    # 仅保留 td
+    if ele.tag == "tr":
+        for child in ele.getchildren():
+            if child.tag == "td":
+                replace_with_text(child)
+    # TODO: prune table
+    elif ele.tag == "table":
+        return ele
+    elif ele.tag in {"ul", "ol"}:
+        for child in ele.getchildren():
+            if child.tag == "li":
+                replace_with_text(child)
+    else:
+        replace_with_text(ele)
+    return ele
+
+
+def deduplicate_xpath(xpaths: List[str]):
+    """
+    去重 xpath
+    """
+    xpaths = sorted(xpaths)
+    remove_indexes = set()
+    for i in range(len(xpaths)):
+        xpath = xpaths[i]
+
+        for j in range(i + 1, len(xpaths)):
+            if xpaths[j].startswith(xpath):
+                remove_indexes.add(j)
+
+    return [xpaths[i] for i in range(len(xpaths)) if i not in remove_indexes]
+
+
+def prune_by_xpath(
+    ele: etree._Element,
+    xpath: str,
+    includes: List[str] = [],
+    excludes: List[str] = [],
+):
+    """
+    根据 xpath 进行修剪
+    保留 includes 周围的节点
+    删除 excludes 一致的节点
+    return bool: 是否应继续遍历
+    """
+    is_in_path = any([x.startswith(xpath) for x in includes])
+    is_contained = any([xpath.startswith(x) for x in includes])
+    if not is_in_path and not is_contained:
+        include_parent = any([x.startswith(parent_xpath(xpath)) for x in includes])
+        if include_parent:
+            prune_to_text(ele)
+            return False
+
+    if xpath in excludes:
+        ele.clear()
+        ele.text = "..."
+
+    return True
 
 
 def extract_left_subtree(
