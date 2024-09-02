@@ -15,6 +15,39 @@ def post_order_traversal(tree: etree._Element, func):
     func(tree)
 
 
+def _traverse(root: etree._Element, xpath: str):
+    # children
+    tag_counts = defaultdict(int)
+    for ele in root.iterchildren():
+        tag_counts[ele.tag] += 1
+
+    tag_order = defaultdict(int)
+    ele: etree._Element
+    for ele in root.iterchildren():
+        new_xpath = f"{xpath}/{ele.tag}"
+        if tag_counts[ele.tag] > 1:
+            new_xpath = f"{xpath}/{ele.tag}[{tag_order[ele.tag] + 1}]"
+        tag_order[ele.tag] += 1
+
+        yield from _traverse(ele, new_xpath)
+        yield (ele, new_xpath)
+
+    yield (root, xpath)
+
+
+def traverse(tree: etree._Element | etree._ElementTree):
+    if isinstance(tree, etree._ElementTree):
+        root = tree.getroot()
+        if root is None:
+            raise ValueError("root is None")
+        if root.tag != "html":
+            raise ValueError("root tag is not html")
+
+        return _traverse(root, "/html")
+
+    return _traverse(tree, f"/{tree.tag}")
+
+
 def _pre_order_traversal(tree: Optional[etree._Element], xpath, func):
     if tree is None:
         return
@@ -30,7 +63,9 @@ def _pre_order_traversal(tree: Optional[etree._Element], xpath, func):
     tag_order = defaultdict(int)
     for ele in tree.iterchildren():
         if tag_counts[ele.tag] > 1:
-            _pre_order_traversal(ele, f"{xpath}/{ele.tag}[{tag_order[ele.tag]}]", func)
+            _pre_order_traversal(
+                ele, f"{xpath}/{ele.tag}[{tag_order[ele.tag] + 1}]", func
+            )
         else:
             _pre_order_traversal(ele, f"{xpath}/{ele.tag}", func)
         tag_order[ele.tag] += 1
@@ -42,6 +77,20 @@ def pre_order_traversal(tree: etree._Element | etree._ElementTree, func):
         _pre_order_traversal(root, f"/{root.tag}", func)
     else:
         _pre_order_traversal(tree, f"/{tree.tag}", func)
+
+
+def breadth_first_travel(element: etree._Element, callback, enable_interruption=False):
+    queue = [element]
+    while queue:
+        current = queue.pop(0)
+        if current is None:
+            continue
+
+        should_interrupt = callback(current)
+        if enable_interruption and should_interrupt:
+            continue
+
+        queue.extend(current.getchildren())
 
 
 def _remove(element: etree._Element):
@@ -179,7 +228,7 @@ def prune_to_text(ele: etree._Element):
     """
     修剪为文本节点
     """
-    if len(ele) == 0:
+    if len(ele) == 0 and ele.text:
         ele.text = ele.text.strip()
         return
 
@@ -220,7 +269,6 @@ def prune_by_xpath(
     ele: etree._Element,
     xpath: str,
     includes: List[str] = [],
-    excludes: List[str] = [],
 ):
     """
     根据 xpath 进行修剪
@@ -235,10 +283,6 @@ def prune_by_xpath(
         if include_parent:
             prune_to_text(ele)
             return False
-
-    if xpath in excludes:
-        ele.clear()
-        ele.text = "..."
 
     return True
 
@@ -272,3 +316,12 @@ def apply_trim_rules(root: etree._Element, rules: List[str]):
         for ele in root.xpath(rule):
             ele.getparent().remove(ele)
     return root
+
+
+def extraction_based_pruning(
+    tree: etree._Element | etree._ElementTree, includes: List[dict]
+):
+    pre_order_traversal(
+        tree,
+        lambda ele, xpath: prune_by_xpath(ele, xpath, includes=includes),
+    )

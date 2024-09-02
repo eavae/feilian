@@ -106,25 +106,18 @@ def deep_first_travel(element: bs4.element.Tag, callback):
     callback(element)
 
 
-def breadth_first_travel(element: bs4.element.Tag, callback, is_interrupt=False):
+def breadth_first_travel(element: bs4.element.Tag, callback, enable_interruption=False):
     queue = [element]
     while queue:
         current = queue.pop(0)
 
-        if is_interrupt and callback(current):
+        should_interrupt = callback(current)
+        if enable_interruption and should_interrupt:
             continue
 
         queue.extend(
             child for child in current.children if isinstance(child, bs4.element.Tag)
         )
-
-
-# table = {
-#     "xpath": '//*[@id="content"]/',
-#     "content": "<table></table>",
-#     "title": "content",  # possible
-#     "children": [{}],
-# }
 
 
 def get_table_title(element: bs4.element.Tag):
@@ -156,7 +149,7 @@ def extract_tables(element: bs4.element.Tag):
             return True
         return False
 
-    breadth_first_travel(element, _extract, is_interrupt=True)
+    breadth_first_travel(element, _extract, enable_interruption=True)
 
     return tables
 
@@ -183,7 +176,7 @@ def extract_tables_recursive(element: bs4.element.Tag):
             return True
         return False
 
-    breadth_first_travel(element, _extract, is_interrupt=True)
+    breadth_first_travel(element, _extract, enable_interruption=True)
 
     return tables
 

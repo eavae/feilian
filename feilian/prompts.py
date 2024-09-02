@@ -1,5 +1,9 @@
 import json
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    PromptTemplate,
+)
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 
@@ -33,7 +37,7 @@ QUESTION_CONSTRUCTION_EN = (
 
 TABLE_EXTRACTION_PROMPT_HISTORY = [
     SystemMessage(
-        "根据问题，提取表格中的内容，并使用 JSON 输出。`_thought`中的内容是你的思考过程，为特殊字段。在 JSON 中不要包含表格中无法找到对应答案的字段。"
+        "根据问题，提取表格中的内容，并使用 JSON 输出。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。除`_thought`外，禁止包含无法找到对应答案的字段。"
     ),
     HumanMessage(
         '表格：<table><tr>三个苹果</tr><tr>四个香蕉</tr></table>\n\n\n问题：水果的总质量。回答格式：{{"mass": "..."}}\n'
@@ -56,6 +60,66 @@ TABLE_EXTRACTION_PROMPT_HISTORY = [
 TABLE_EXTRACTION_PROMPT_CN = ChatPromptTemplate.from_messages(
     [
         MessagesPlaceholder("chat_history"),
-        ("human", "表格：{table}\n\n\n问题：{question}"),
+        ("human", "表格：{table}\n\n\n问题：{query}"),
+    ]
+)
+
+XPATH_PROGRAM_PROMPT_HISTORY_CN = [
+    SystemMessage(
+        "根据问题，编写提取各个字段的 XPath 规则，并使用 JSON 输出。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。"
+    ),
+    HumanMessage(
+        '```html\n<table><tr><td>3个</td><td>苹果</td></tr><tr><tr><td>4个</td><td>香蕉</td></tr></table>\n```\n\n\n问题：几个柠檬？\n回答格式：{{"n_lemons": "..."}}'
+    ),
+    # AIMessage(
+    #     json.dumps({"_thought": "提供的 html 中没有柠檬，所以柠檬数量应该是未知。"})
+    # ),
+    # HumanMessage(
+    #     '```html\n<table><tr><th>数量</th><th>水果</th></tr><tr><td>10</td><td>苹果</td></tr><tr><tr><td>3</td><td>香蕉</td></tr></table>\n```\n\n\n问题：几个苹果和香蕉？\n回答格式：{{"n_lemons": "...", "n_bananas": "..."}}'
+    # ),
+    AIMessage(
+        json.dumps(
+            {
+                "_thought": "表格中提到了苹果和香蕉，苹果数量是10，香蕉数量是3。编写 XPath 时，应该注意区分不同的水果，并使用 regex，以便提取正确的数量且有鲁棒性。",
+                "n_apples": "//td[re:test(text(), '苹果')]/../td[1]/text()",
+                "n_bananas": "//td[re:test(text(), '香蕉')]/../td[1]/text()",
+            }
+        )
+    ),
+]
+
+XPATH_PROGRAM_PROMPT_CN = ChatPromptTemplate.from_messages(
+    [
+        MessagesPlaceholder("chat_history"),
+        ("human", "```html\n{html}\n```\n\n\n问题：{query}"),
+    ]
+)
+
+QUESTION_CONVERSION_COMP_CN = PromptTemplate.from_template(
+    (
+        "你需要将用户提问转换为编写 XPath 的任务描述，并保留格式要求。新的格式需要使键与原格式要求完全一致，值始终为字符串，并添加`_thought`字段，并使其位于其他键之前。仅转换问题，不要回答。"
+        "\n\n"
+        "示例：\n"
+        "问题：请提供一个商学院的名称、联系电话、类型和网站链接，以JSON格式回答。\n\n```json\n{{'name':['商学院名称'],'phone':['联系电话'],'type':['类型'],'website':['网站链接']\n}}```"
+        "转换后：编写 XPath 用以提取商学院的名称、联系电话、类型和网站链接，以JSON格式回答。\n\n```json\n{{'_thought':'...','name':'...','phone':'...','type':'...','website':'...'\n}}"
+        "\n\n"
+        "用户的问题：{query}"
+        "准换后："
+    )
+)
+
+# 对话形式的问题任务效果不行，补全形式的更好
+QUESTION_CONVERSION_CN = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage(
+            "你需要将用户提问转换为编写 XPath 的任务描述，并保留格式要求。新的格式需要使键与原格式要求完全一致，值始终为字符串，并添加`_thought`字段，并使其位于其他键之前。仅转换问题，不要回答。"
+        ),
+        HumanMessage(
+            '请提供一个商学院的名称、联系电话、类型和网站链接，以JSON格式回答。\n\n```json\n{"name":["商学院名称"],"phone":["联系电话"],"type":["类型"],"website":["网站链接"]\n}```'
+        ),
+        AIMessage(
+            '编写 XPath 用以提取商学院的名称、联系电话、类型和网站链接，以JSON格式回答。\n\n```json\n{"_thought":"...","name":"...","phone":"...","type":"...","website":"..."\n}'
+        ),
+        HumanMessage("{query}"),
     ]
 )
