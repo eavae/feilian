@@ -71,12 +71,6 @@ XPATH_PROGRAM_PROMPT_HISTORY_CN = [
     HumanMessage(
         '```html\n<table><tr><td>3个</td><td>苹果</td></tr><tr><tr><td>4个</td><td>香蕉</td></tr></table>\n```\n\n\n问题：几个柠檬？\n回答格式：{{"n_lemons": "..."}}'
     ),
-    # AIMessage(
-    #     json.dumps({"_thought": "提供的 html 中没有柠檬，所以柠檬数量应该是未知。"})
-    # ),
-    # HumanMessage(
-    #     '```html\n<table><tr><th>数量</th><th>水果</th></tr><tr><td>10</td><td>苹果</td></tr><tr><tr><td>3</td><td>香蕉</td></tr></table>\n```\n\n\n问题：几个苹果和香蕉？\n回答格式：{{"n_lemons": "...", "n_bananas": "..."}}'
-    # ),
     AIMessage(
         json.dumps(
             {

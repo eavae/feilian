@@ -312,11 +312,13 @@ def rank_xpath_node(state):
         df["n_extracted"] += df["xpath"].apply(lambda x: 1 if len(tree.xpath(x)) else 0)
 
     # take the first xpath
-    return (
+    left_df = (
         df.sort_values(["field_name", "n_extracted"], ascending=False)
         .groupby("field_name")
         .first()
     )
+    left_df.merge(df, on=["field_name", "xpath"], how="inner")
+    return left_df
 
 
 def fanout_to_table_detection(state: State):
@@ -340,7 +342,7 @@ def build_graph(memory=None):
     builder.add_node("query_conversion", query_conversion_node)
     builder.add_node("detect_tables", detect_tables_node)
     builder.add_node("program_xpath", program_xpath_node)
-    builder.add_node("rank_xpath", rank_xpath_node)
+    # builder.add_node("rank_xpath", rank_xpath_node)
     # builder.add_node("test_xpath", test_xpath_node)
 
     # add edges

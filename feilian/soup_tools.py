@@ -485,20 +485,3 @@ def get_common_ancestor(nodes: List[bs4.element.Tag]):
                 break
 
     return common_ancestor
-
-
-if __name__ == "__main__":
-    soup = BeautifulSoup(
-        """
-        <html>
-            <head>
-                <title>Test</title>
-            </head>
-            <body>
-                hello world
-            </body>
-        </html>
-        """,
-        "html5lib",
-    )
-    pass
