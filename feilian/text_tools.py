@@ -2,7 +2,7 @@ from inscriptis import get_text, ParserConfig
 
 
 def convert_html_to_text(html: str) -> str:
-    text = get_text(html, ParserConfig(display_links=True, display_anchors=True))
+    text = get_text(html, ParserConfig(display_links=False, display_anchors=False))
 
     # remove leading and trailing whitespaces
     texts = text.split("\n")

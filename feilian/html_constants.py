@@ -74,3 +74,5 @@ INLINE_ELEMENTS = {
     "tt",
     "var",
 }
+
+CONTAINER_ELEMENTS = {"table", "ul", "ol", "section", "article"}

@@ -35,32 +35,32 @@ QUESTION_CONSTRUCTION_EN = (
     "Your question is (ask directly, do not answer, explain or ask irrelevant questions): "
 )
 
-TABLE_EXTRACTION_PROMPT_HISTORY = [
+EXTRACTION_PROMPT_HISTORY = [
     SystemMessage(
-        "根据问题，提取表格中的内容，并使用 JSON 输出。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。除`_thought`外，禁止包含无法找到对应答案的字段。"
+        "根据问题，从给定的上下文（网页内容）中提取信息，使用 JSON 输出。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。除`_thought`外，禁止包含与提问无关的字段。给定的上下文可能不完整或不包含答案，需根据问题进行推断。输出时，JSON 中不应包含没有提及的字段。"
     ),
-    HumanMessage(
-        '表格：<table><tr>三个苹果</tr><tr>四个香蕉</tr></table>\n\n\n问题：水果的总质量。回答格式：{{"mass": "..."}}\n'
-    ),
-    AIMessage(json.dumps({"_thought": "表格中没有提到质量，所以质量应该是未知。"})),
-    HumanMessage(
-        '表格：<table><tr>三个苹果</tr><tr>四个香蕉</tr></table>\n\n\n问题：请提供水果名称，总数量，总质量。回答格式：{{"name": ["..."], "total_amount": "...", "mass": "..."}}'
-    ),
-    AIMessage(
-        json.dumps(
-            {
-                "_thought": "表格中提到了苹果和香蕉，所以水果名称应该包括苹果和香蕉。表格中提到了三个苹果和四个香蕉，所以总数量应该是7。表格中没有提到质量，所以质量应该是未知。",
-                "name": ["苹果", "香蕉"],
-                "total_amount": 7,
-            }
-        )
-    ),
+    # HumanMessage(
+    #     '上下文：```<table><tr>三个苹果</tr><tr>四个香蕉</tr></table>````\n\n\n问：水果的总质量。回答格式：{{"mass": "..."}}\n'
+    # ),
+    # AIMessage(json.dumps({"_thought": "表格中没有提到质量，所以质量应该是未知。"})),
+    # HumanMessage(
+    #     '上下文：```<table><tr>三个苹果</tr><tr>四个香蕉</tr></table>```\n\n\n问题：请提供水果名称，总数量，总质量。回答格式：{{"name": ["..."], "total_amount": "...", "mass": "..."}}'
+    # ),
+    # AIMessage(
+    #     json.dumps(
+    #         {
+    #             "_thought": "表格中提到了苹果和香蕉，所以水果名称应该包括苹果和香蕉。表格中提到了三个苹果和四个香蕉，所以总数量应该是7。表格中没有提到质量，所以质量应该是未知。",
+    #             "name": ["苹果", "香蕉"],
+    #             "total_amount": 7,
+    #         }
+    #     )
+    # ),
 ]
 
-TABLE_EXTRACTION_PROMPT_CN = ChatPromptTemplate.from_messages(
+EXTRACTION_PROMPT_CN = ChatPromptTemplate.from_messages(
     [
         MessagesPlaceholder("chat_history"),
-        ("human", "表格：{table}\n\n\n问题：{query}"),
+        ("human", "上下文：```{context}```\n\n\n问题：{query}"),
     ]
 )
 

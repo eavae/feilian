@@ -1,4 +1,9 @@
-请提供以下信息关于一款数码相机的详细数据，格式为JSON：
-- 制造商（manufacturer），包括品牌和地区分部
-- 型号（model）
-- 价格（price）
+请提供以下信息关于这款数码相机的详细数据，格式为JSON：
+
+```json
+{
+  "manufacturer": string[],
+  "model": string[],
+  "price": string[]
+}
+```

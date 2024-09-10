@@ -1,15 +1,18 @@
 import tiktoken
 import pandas as pd
+import numpy as np
 import os
 import bs4
 import json
 import html
+import warnings
 from minify_html import minify
 from tqdm import tqdm
 from typing import List
+from html5lib.constants import DataLossWarning
 
 from feilian.soup_tools import (
-    clean_html,
+    clean_html as soup_clean_html,
     get_structure,
     prune_by_structure,
     extract_tables_recursive,
@@ -18,6 +21,8 @@ from feilian.soup_tools import (
     get_tables_max_width,
     get_tables_width,
 )
+from feilian.etree_token_stats import build_token_tree, remove_node
+from feilian.etree_tools import parse_html, clean_html as etree_clean_html, to_string
 
 SWDE_DATA_ROOT = "data/swde"
 
@@ -25,13 +30,25 @@ tqdm.pandas()
 
 encoder = tiktoken.encoding_for_model("gpt-4")
 
+warnings.filterwarnings(action="ignore", category=DataLossWarning, module=r"html5lib")
+
+
+def tokenizer(text):
+    if not text:
+        return 0
+    return len(encoder.encode(text))
+
 
 def swde__stats_token_row(row):
     html_file_path = os.path.join(SWDE_DATA_ROOT, row["file_path"])
-    html_content, cleaned_html = read_and_clean_html(html_file_path)
+    html = open(html_file_path).read()
+    tree = parse_html(html)
+    etree_clean_html(tree)
+    cleaned_html = minify(to_string(tree))
 
-    row["raw_tokens"] = len(encoder.encode(html_content))
-    row["cleaned_tokens"] = len(encoder.encode(cleaned_html))
+    row["raw_tokens"] = tokenizer(html)
+    row["cleaned_tokens"] = tokenizer(cleaned_html)
+
     return row
 
 
@@ -51,7 +68,7 @@ def swde__stats_token(dataset_file_path: str):
     df.reset_index(drop=True, inplace=True)
 
     df = df.parallel_apply(swde__stats_token_row, axis=1)
-    df.to_csv("swde_token_stats.csv")
+    df.to_csv("data/swde_token_stats.csv")
 
 
 def swde__plot_token_dist(
@@ -88,7 +105,7 @@ def read_and_clean_html(file_path: str):
     with open(file_path, "r") as f:
         html_content = f.read()
     soup = bs4.BeautifulSoup(html_content, "html5lib")
-    cleaned_soup = clean_html(soup)
+    cleaned_soup = soup_clean_html(soup)
     cleaned_html = minify(cleaned_soup.prettify().strip())
 
     return html_content, cleaned_html
@@ -98,7 +115,7 @@ def read_and_structure_html(file_path: str):
     html_file_path = os.path.join(SWDE_DATA_ROOT, file_path)
     html_text = open(html_file_path, "r", encoding="utf-8").read()
     soup = bs4.BeautifulSoup(html_text, "html5lib")
-    soup = clean_html(soup)
+    soup = soup_clean_html(soup)
 
     structure = get_structure(html_text)
     prune_by_structure(soup, structure)
@@ -371,8 +388,203 @@ def swde_table_correlation_analyse(file_path: str):
     fig.show()
 
 
+def swde__stats_parallel_pruning_row(row, until=512):
+    html_file_path = os.path.join(SWDE_DATA_ROOT, row["file_path"])
+    html = open(html_file_path).read()
+    tree = parse_html(html)
+    etree_clean_html(tree)
+
+    removed_tokens = []
+    removed_depths = []
+    removed_xpath = []
+    token_tree = build_token_tree(tree, tokenizer, only_text=True)
+    token_tree.reweighing(token_tree.max_depth, token_tree.token, token_tree.max_width)
+    node = token_tree.most_weighted_node
+    while node and token_tree.token > until:
+        remove_node(node)
+
+        removed_tokens.append(node.token)
+        removed_depths.append(node.depth)
+        removed_xpath.append(node.xpath)
+
+        if token_tree.token > 0:
+            token_tree.reweighing(
+                token_tree.max_depth, token_tree.token, token_tree.max_width
+            )
+            node = token_tree.most_weighted_node
+        else:
+            node = None
+
+    for xpath in removed_xpath:
+        ele = tree.xpath(xpath)
+        if isinstance(ele, list):
+            for e in ele:
+                e.getparent().remove(e)
+        elif ele is not None:
+            ele.getparent().remove(ele)
+
+    row["removed_tokens"] = json.dumps(removed_tokens)
+    row["removed_depths"] = json.dumps(removed_depths)
+    row["removed_xpath"] = json.dumps(removed_xpath)
+    row["pruned_tokens"] = tokenizer(minify(to_string(tree)))
+
+    return row
+
+
+def swde__stats_parallel_pruning():
+    # from pandarallel import pandarallel
+
+    # pandarallel.initialize(progress_bar=True, nb_workers=4)
+
+    df = pd.read_csv("data/swde_token_stats.csv")
+
+    # sample 16 per group, group by category, site
+    df = df.groupby(["category", "site"]).apply(
+        lambda x: x.sample(
+            min(len(x), 16),
+            replace=False,
+            random_state=0,
+        )
+    )
+
+    # remove index
+    df.reset_index(drop=True, inplace=True)
+
+    df = df.progress_apply(swde__stats_parallel_pruning_row, axis=1)
+    df.to_csv("data/swde_parallel_pruning.csv")
+
+
+# 绘制 html 片段数量统计
+# 绘制 4 张图，分别是 1024, 2048, 3072, 4096 的片段数量统计
+# 横坐标是 cleaned_tokens 的分桶
+# 纵坐标是 fragment_count 的分布（均值，95% 分位数，5% 分位数）
+def swde__plot_fragment_count_stats():
+
+    # from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+
+    df = pd.read_csv("data/swde_parallel_pruning.csv")
+    df["cleaned_tokens"] = df["cleaned_tokens"].apply(lambda x: x // 1000 * 1000)
+    df["fragment_count"] = df["removed_tokens"].apply(lambda x: len(json.loads(x)))
+
+    # fig = make_subplots(
+    #     rows=2,
+    #     cols=2,
+    #     subplot_titles=["1024", "2048", "3072", "4096"],
+    # )
+    # for i, limit in enumerate([1024, 2048, 3072, 4096]):
+    # row, col = i // 2 + 1, i % 2 + 1
+
+    fig = go.Figure()
+    group_df = df.groupby("cleaned_tokens")["fragment_count"].apply(
+        lambda x: pd.Series(x).describe(percentiles=[0.05, 0.95])
+    )
+    group_df = group_df.unstack().reset_index()
+
+    fig.add_trace(
+        go.Scatter(
+            x=group_df["cleaned_tokens"],
+            y=group_df["mean"],
+            name="mean",
+            mode="markers",
+            showlegend=False,
+            marker=dict(color="blue", size=np.log(group_df["count"]) * 4),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=group_df["cleaned_tokens"],
+            y=group_df["5%"],
+            name="5%",
+            mode="markers",
+            showlegend=False,
+            marker=dict(color="blue", size=8),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=group_df["cleaned_tokens"],
+            y=group_df["95%"],
+            name="95%",
+            mode="markers",
+            showlegend=False,
+            marker=dict(color="blue", size=8),
+        )
+    )
+
+    fig.update_layout(height=1024, title_text="Fragment Count Stats")
+    fig.show()
+    pass
+
+
+# 绘制 html 片段中 token 数的统计
+# 绘制 4 张图，分别是 1024, 2048, 3072, 4096 的片段数量统计
+# 横坐标是 cleaned_tokens 的分桶
+# 纵坐标是 fragment_tokens 的分布（均值，95% 分位数，5% 分位数）
+def swde__plot_fragment_token_stats():
+    import plotly.graph_objects as go
+
+    df = pd.read_csv("data/swde_parallel_pruning.csv")
+    df["cleaned_tokens"] = df["cleaned_tokens"].apply(lambda x: x // 1000 * 1000)
+    df["removed_tokens"] = df["removed_tokens"].apply(lambda x: json.loads(x))
+
+    fig = go.Figure()
+
+    # flatten fragment_tokens
+    limit_df = df.explode("removed_tokens")
+    limit_df["removed_tokens"] = limit_df["removed_tokens"].fillna(0)
+    limit_df["removed_tokens"] = limit_df["removed_tokens"].astype(int)
+
+    # group by cleaned_tokens
+    group_df = limit_df.groupby("cleaned_tokens")["removed_tokens"].apply(
+        lambda x: pd.Series(x).describe(percentiles=[0.05, 0.95])
+    )
+    group_df = group_df.unstack().reset_index()
+
+    fig.add_trace(
+        go.Scatter(
+            x=group_df["cleaned_tokens"],
+            y=group_df["mean"],
+            name="mean",
+            mode="markers",
+            showlegend=False,
+            marker=dict(color="blue", size=np.log(group_df["count"]) * 4),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=group_df["cleaned_tokens"],
+            y=group_df["5%"],
+            name="5%",
+            mode="markers",
+            showlegend=False,
+            marker=dict(color="blue", size=8),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=group_df["cleaned_tokens"],
+            y=group_df["95%"],
+            name="95%",
+            mode="markers",
+            showlegend=False,
+            marker=dict(color="blue", size=8),
+        )
+    )
+
+    fig.show()
+    pass
+
+
 if __name__ == "__main__":
-    swde_table_correlation_analyse("swde_extracted_tables.csv")
+    # swde__stats_token("data/swde.parquet")
+    swde__stats_parallel_pruning()
+    swde__plot_fragment_count_stats()
+    swde__plot_fragment_token_stats()
 
     # structure, cleaned_html = read_and_structure_html(
     #     "sourceCode/sourceCode/restaurant/restaurant-pickarestaurant(2000)/0000.htm"

@@ -182,6 +182,11 @@ def _clean_html(ele: etree._Element):
             _remove(ele)
             return
 
+    # 移除 display:none
+    if "style" in ele.attrib and re.search(r"display\s*:\s*none", ele.attrib["style"]):
+        _remove(ele)
+        return
+
     # 移除多余属性
     if ele.attrib:
         for key in list(ele.attrib.keys()):
@@ -309,9 +314,9 @@ def prune_to_text(ele: etree._Element):
     return ele
 
 
-def deduplicate_xpath(xpaths: List[str]):
+def deduplicate_to_prune(xpaths: List[str]):
     """
-    去重 xpath
+    去重 xpath，保留最上层的节点
     """
     xpaths = sorted(xpaths)
     remove_indexes = set()

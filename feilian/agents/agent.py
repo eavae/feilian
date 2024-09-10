@@ -1,11 +1,10 @@
 import os
 import hashlib
-import html5lib
 import json
 import pandas as pd
 from lxml import etree
 from typing import List, Annotated
-from typing_extensions import TypedDict, TypeVar, Optional
+from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
 from enum import Enum
@@ -17,9 +16,11 @@ from feilian.etree_tools import (
     clean_html,
     deduplicate_to_prune,
     extraction_based_pruning,
-    traverse,
     to_string,
+    parse_html,
 )
+from feilian.agents.fragments_detection import Snippet, Operator, OperatorTypes
+from feilian.agents.reducers import replace_with_id, append
 from feilian.prompts import (
     EXTRACTION_PROMPT_CN,
     EXTRACTION_PROMPT_HISTORY,
@@ -29,49 +30,10 @@ from feilian.prompts import (
 )
 
 
-T = TypeVar("T")
-
-
 class ContentTypes(Enum):
     LAYOUT = "layout"  # 布局元素
     POST = "post"  # 文章内容
     TABLE = "table"  # 数据表格
-
-
-class OperatorTypes(Enum):
-    PRUNE = "prune"
-    EXTRACT = "extract"
-
-
-def replace_with_id(left: T, right: T) -> T:
-    if any([not x["id"] for x in left]) or any([not x["id"] for x in right]):
-        raise ValueError("id is required")
-
-    left_ids = set([x["id"] for x in left])
-    right_ids = set([x["id"] for x in right])
-    token_left = left_ids - right_ids
-
-    left_items = []
-    for item in left:
-        if item["id"] in token_left:
-            left_items.append(item)
-
-    return left_items + right
-
-
-def append(left: List[T], right: List[T]) -> List[T]:
-    return left + right
-
-
-class Operator(TypedDict):
-    xpath: str
-    operator_type: Optional[OperatorTypes]
-
-
-class Snippet(TypedDict):
-    id: str
-    raw_html: str
-    ops: List[Operator]
 
 
 class Task(TypedDict):
@@ -86,14 +48,8 @@ class State(TypedDict):
     xpath_query: str
 
 
-def get_tree(snippet: Snippet, compact: bool = True) -> etree._Element:
-    tree = html5lib.parse(
-        snippet["raw_html"],
-        treebuilder="lxml",
-        namespaceHTMLElements=False,
-    )
-    if not compact:
-        return tree
+def get_tree(snippet: Snippet) -> etree._Element:
+    tree = parse_html(snippet["raw_html"])
 
     # 1. clean html
     clean_html(tree)
@@ -115,7 +71,7 @@ def get_tree(snippet: Snippet, compact: bool = True) -> etree._Element:
     extract_ops = [
         o for o in snippet["ops"] if o["operator_type"] == OperatorTypes.EXTRACT
     ]
-    xpaths = deduplicate_to_prune([op["xpath"] for op in extract_ops])
+    xpaths = [op["xpath"] for op in extract_ops]
     extraction_based_pruning(tree, xpaths)
 
     return tree
@@ -178,6 +134,7 @@ def merge_operations(operations: List[Operator]) -> List[Operator]:
                 "id": len(ops),
                 "xpath": xpath,
                 "operator_type": k,
+                "content_type": ContentTypes.LAYOUT,
             }
             for xpath in xpaths
         ]
@@ -185,72 +142,11 @@ def merge_operations(operations: List[Operator]) -> List[Operator]:
     return group_ops
 
 
-def detect_tables_node(state) -> State:
-    """从 snippets 获取检测表格内容，判断是否需要提取或移除"""
-    snippet: Snippet = state["snippet"]
-    query = state["query"]
-
-    tree = get_tree(snippet)
-    operations = snippet["ops"]
-
-    chain = _create_table_extraction_chain()
-    for node, xpath in traverse(tree):
-        if node.tag != "table":
-            continue
-
-        # TODO: 统计表格的 token 数量
-        #
-
-        table = to_string(node)
-        minified_table = minify(table)
-        if not minified_table:
-            operations += [
-                {
-                    "id": len(operations),
-                    "xpath": xpath,
-                    "operator_type": OperatorTypes.PRUNE,
-                }
-            ]
-            continue
-
-        response = chain.invoke(
-            input=dict(
-                context=minified_table,
-                query=query,
-            )
-        )
-        data = json.loads(response.content)
-        del data["_thought"]
-        data = {key: value for key, value in data.items() if value}
-
-        if len(data) == 0:
-            operations += [
-                {
-                    "id": len(operations),
-                    "xpath": xpath,
-                    "operator_type": OperatorTypes.PRUNE,
-                }
-            ]
-        else:
-            operations += [
-                {
-                    "id": len(operations),
-                    "xpath": xpath,
-                    "operator_type": OperatorTypes.EXTRACT,
-                }
-            ]
-
-    # merge operations
-    operations = merge_operations(operations)
-
-    return dict(snippets=[{**snippet, "ops": operations}])
-
-
 def program_xpath_node(state):
     snippet = state["snippet"]
     query = state["query"]
 
-    tree = get_tree(snippet, compact=True)
+    tree = get_tree(snippet)
     chain = _create_program_xpath_chain()
     html = to_string(tree)
     minified_html = minify(html)
@@ -267,22 +163,6 @@ def program_xpath_node(state):
     return dict(tasks=tasks)
 
 
-# def test_xpath_node(state) -> List[Task]:
-#     """将 html 转换为文本后，使用 xpath 提取数据，然后让 LLM 进行测试"""
-#     snippet: List[Snippet] = state["snippet"]
-#     tasks: List[Task] = state["tasks"]
-
-#     tree = get_tree(snippet, compact=False)
-#     text = convert_html_to_text(snippet["raw_html"])
-
-#     extracted_data = {}
-#     for task in tasks:
-#         ele = tree.xpath(task["xpath"])
-#         extracted_data[task["field_name"]] = ele
-
-#     return tasks
-
-
 def rank_xpath_node(state):
     """group by field name, then rank by the number of extracted data"""
 
@@ -292,7 +172,7 @@ def rank_xpath_node(state):
 
     df["n_extracted"] = 0
     for snippet in state["snippets"]:
-        tree = get_tree(snippet, compact=False)
+        tree = parse_html(snippet["raw_html"])
         df["n_extracted"] += df["xpath"].apply(lambda x: 1 if len(tree.xpath(x)) else 0)
 
     # take the first xpath
@@ -301,7 +181,7 @@ def rank_xpath_node(state):
         .groupby("field_name")
         .first()
     )
-    left_df.merge(df, on=["field_name", "xpath"], how="inner")
+    left_df = left_df.merge(df, on=["field_name", "xpath"], how="inner")
     return left_df
 
 
@@ -324,7 +204,7 @@ def build_graph(memory=None):
 
     # add nodes
     builder.add_node("query_conversion", query_conversion_node)
-    builder.add_node("detect_tables", detect_tables_node)
+    builder.add_node("fragments_detection", fragments_detection_node)
     builder.add_node("program_xpath", program_xpath_node)
     # builder.add_node("rank_xpath", rank_xpath_node)
     # builder.add_node("test_xpath", test_xpath_node)
