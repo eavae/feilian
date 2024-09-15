@@ -66,7 +66,7 @@ EXTRACTION_PROMPT_CN = ChatPromptTemplate.from_messages(
 
 XPATH_PROGRAM_PROMPT_HISTORY_CN = [
     SystemMessage(
-        "根据问题，编写提取各个字段的 XPath，并使用 JSON 输出。当有多个 html 片段时，你需要针对某个字段编写**一个xpath**以适应所有具有相似结构的 html 片段。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。你需要逐字段思考，并根据用户提供的 html 片段，推理你的思考过程。你编写的 xpath 应简洁明了，以适应具有相似结构的网页。注意，与标准 XPath 不同，这里可使用 regex，比如`re:test` 或 `re:match`来增加xpath的泛用性。编写 xpath 时，优先使用结构及标签语义。使用regex时，仅保留**1-2个关键单词**，以便在相似结构但内容不同的网站上使用。"
+        "根据问题，编写提取各个字段的 XPath，并使用 JSON 输出。当有多个 html 片段时，你需要针对某个字段编写**一个xpath**以适应所有具有相似结构的 html 片段。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。你需要逐字段思考，并根据用户提供的 html 片段，显示的推理并反思。你编写的 xpath 应简洁明了，以适应内容不同但结构相似的网页。注意点：1. 与标准 XPath 不同，这里可使用 regex，比如`re:test` 或 `re:match`来增加xpath的泛用性。2. 编写 xpath 时，优先使用结构及标签语义。使用regex时，仅保留**1-2个关键单词**，以便在相似结构但内容不同的网站上使用。3. text() 函数只会获取当前节点的文本，而不是该节点及以下节点的所有文本，请合理使用。"
     ),
     HumanMessage(
         '```html\n<table><tr><td>3个</td><td>苹果</td></tr><tr><tr><td>4个</td><td>香蕉</td></tr></table>\n```\n\n\n问题：几个香蕉、苹果？\n回答格式：{{"n_apples": "...", "n_bananas": "..."}}'
