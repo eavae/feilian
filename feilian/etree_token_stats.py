@@ -6,8 +6,6 @@ from feilian.html_constants import INLINE_ELEMENTS, CONTAINER_ELEMENTS
 
 MIN_TEXT_TOKEN = 256
 MIN_HTML_TOKEN = 512
-MAX_TEXT_TOKEN = 1024
-MAX_HTML_TOKEN = 2048
 
 
 def logistic(x):
@@ -72,7 +70,7 @@ class Node:
         self, max_depth: int, total_token: int, max_width: int, only_text=True
     ):
         depth_weight = self.depth / max_depth
-        token_weight = np.tanh(self.token / total_token)
+        token_weight = np.tanh(self.token / total_token) * 0.8
         width_weight = self.width / max_width
 
         element_weight = 0.6
@@ -93,10 +91,7 @@ class Node:
 
         weight = depth_weight + token_weight + width_weight + element_weight
         min_token = only_text and MIN_TEXT_TOKEN or MIN_HTML_TOKEN
-        max_token = only_text and MAX_TEXT_TOKEN or MAX_HTML_TOKEN
         if self.token < min_token:
-            weight = 0
-        elif self.token > max_token:
             weight = 0
         self.weight = weight
 
@@ -227,8 +222,6 @@ def extract_fragments_by_weight(
     only_text=True,
     until: int = 468,
 ):
-    xpath = []
-
     token_tree = build_token_tree(tree, tokenizer, only_text)
     while True:
         if token_tree.token < until:
@@ -246,8 +239,8 @@ def extract_fragments_by_weight(
             break
         if node.depth <= 1:
             break
+        if node.weight == 0:
+            break
 
         remove_node(node)
-        xpath.append(node.xpath)
-
-    return xpath
+        yield node.xpath

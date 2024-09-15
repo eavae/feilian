@@ -1,16 +1,17 @@
 import os
 import hashlib
 import json
+import json_repair
 import pandas as pd
+import warnings
 from lxml import etree
 from typing import List, Annotated
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
-from enum import Enum
 from langchain_openai import ChatOpenAI
 from minify_html import minify
-from langgraph.checkpoint.sqlite import SqliteSaver
+from html5lib.constants import DataLossWarning
 
 from feilian.etree_tools import (
     clean_html,
@@ -19,21 +20,16 @@ from feilian.etree_tools import (
     to_string,
     parse_html,
 )
-from feilian.agents.fragments_detection import Snippet, Operator, OperatorTypes
+from feilian.agents.fragments_detection import Snippet, OperatorTypes, tokenizer
 from feilian.agents.reducers import replace_with_id, append
 from feilian.prompts import (
-    EXTRACTION_PROMPT_CN,
-    EXTRACTION_PROMPT_HISTORY,
     XPATH_PROGRAM_PROMPT_HISTORY_CN,
     XPATH_PROGRAM_PROMPT_CN,
     QUESTION_CONVERSION_COMP_CN,
 )
+from feilian.agents.fragments_detection import fragment_detection_graph
 
-
-class ContentTypes(Enum):
-    LAYOUT = "layout"  # 布局元素
-    POST = "post"  # 文章内容
-    TABLE = "table"  # 数据表格
+warnings.filterwarnings(action="ignore", category=DataLossWarning, module=r"html5lib")
 
 
 class Task(TypedDict):
@@ -48,24 +44,20 @@ class State(TypedDict):
     xpath_query: str
 
 
-def get_tree(snippet: Snippet) -> etree._Element:
-    tree = parse_html(snippet["raw_html"])
-
-    # 1. clean html
-    clean_html(tree)
+def run_operators(tree, snippet: Snippet) -> etree._Element:
 
     # 2. run prune operations
     prune_ops = [o for o in snippet["ops"] if o["operator_type"] == OperatorTypes.PRUNE]
     xpaths = deduplicate_to_prune([op["xpath"] for op in prune_ops])
     for xpath in xpaths:
-        ele: etree._Element = tree.xpath(xpath)
-        if isinstance(ele, list):
-            for x in ele:
-                x.clear()
-                x.text = "..."
+        nodes: etree._Element = tree.xpath(xpath)
+        if isinstance(nodes, list):
+            for node in nodes:
+                node.clear()
+                node.text = ""
         else:
-            ele.clear()
-            ele.text = "..."
+            nodes.clear()
+            nodes.text = ""
 
     # 3. run extract operations
     extract_ops = [
@@ -75,19 +67,6 @@ def get_tree(snippet: Snippet) -> etree._Element:
     extraction_based_pruning(tree, xpaths)
 
     return tree
-
-
-def _create_table_extraction_chain():
-    llm = ChatOpenAI(
-        model="deepseek-chat",
-        temperature=0.1,
-        model_kwargs={
-            "response_format": {
-                "type": "json_object",
-            },
-        },
-    )
-    return EXTRACTION_PROMPT_CN.partial(chat_history=EXTRACTION_PROMPT_HISTORY) | llm
 
 
 def _create_program_xpath_chain():
@@ -120,50 +99,76 @@ def query_conversion_node(state: State) -> State:
     return dict(xpath_query=response.content)
 
 
-def merge_operations(operations: List[Operator]) -> List[Operator]:
-    ops = []
-
-    class_group = {OperatorTypes.PRUNE: [], OperatorTypes.EXTRACT: []}
-    for o in operations:
-        class_group[o["operator_type"]].append(o)
-
-    for k, group_ops in class_group.items():
-        xpaths = deduplicate_to_prune([o["xpath"] for o in group_ops])
-        ops += [
+def fragments_detection_node(state: State) -> State:
+    snippet = state["snippets"][0]
+    new_state = fragment_detection_graph.invoke(
+        {
+            "id": snippet["id"],
+            "raw_html": snippet["raw_html"],
+            "ops": snippet["ops"],
+            "query": state["query"],
+        }
+    )
+    return {
+        "snippets": [
             {
-                "id": len(ops),
-                "xpath": xpath,
-                "operator_type": k,
-                "content_type": ContentTypes.LAYOUT,
+                "id": snippet["id"],
+                "raw_html": snippet["raw_html"],
+                "ops": new_state["ops"],
             }
-            for xpath in xpaths
-        ]
+        ],
+    }
 
-    return group_ops
+
+program_xpath = _create_program_xpath_chain()
 
 
 def program_xpath_node(state):
     snippet = state["snippet"]
     query = state["query"]
 
-    tree = get_tree(snippet)
-    chain = _create_program_xpath_chain()
+    tree = parse_html(snippet["raw_html"])
+    clean_html(tree)
+    tokens_before = tokenizer(minify(to_string(tree)))
+
+    tree = run_operators(tree, snippet)
     html = to_string(tree)
     minified_html = minify(html)
-    response = chain.invoke(dict(html=minified_html, query=query))
-    data = json.loads(response.content)
+    tokens_after = tokenizer(minified_html)
+
+    response = program_xpath.invoke(dict(html=minified_html, query=query))
+    data = json_repair.repair_json(response.content, return_objects=True)
 
     tasks = []
     for field_name, xpath in data.items():
         if field_name == "_thought":
             continue
 
+        if isinstance(xpath, list):
+            xpath = xpath[0]
+
+        if not xpath:
+            continue
+
         tasks.append(dict(field_name=field_name, xpath=xpath))
 
+    print(
+        f"[Program XPath] {tokens_before} ==> {tokens_after} [{json.dumps(data, ensure_ascii=False)}]"
+    )
     return dict(tasks=tasks)
 
 
-def rank_xpath_node(state):
+def robust_xpath(tree, xpath):
+    try:
+        return tree.xpath(
+            xpath, namespaces={"re": "http://exslt.org/regular-expressions"}
+        )
+    except Exception as e:
+        print(f"Error: {e}")
+        return []
+
+
+def rank_xpath_node(state, category: str, site: str):
     """group by field name, then rank by the number of extracted data"""
 
     tasks = state["tasks"]
@@ -173,7 +178,9 @@ def rank_xpath_node(state):
     df["n_extracted"] = 0
     for snippet in state["snippets"]:
         tree = parse_html(snippet["raw_html"])
-        df["n_extracted"] += df["xpath"].apply(lambda x: 1 if len(tree.xpath(x)) else 0)
+        df["n_extracted"] += df["xpath"].apply(
+            lambda x: (1 if len(robust_xpath(tree, x)) else 0)
+        )
 
     # take the first xpath
     left_df = (
@@ -181,13 +188,26 @@ def rank_xpath_node(state):
         .groupby("field_name")
         .first()
     )
-    left_df = left_df.merge(df, on=["field_name", "xpath"], how="inner")
-    return left_df
+    df.drop(columns=["n_extracted"], inplace=True)
+    left_df.merge(df, on=["field_name", "xpath"], how="inner")
+
+    left_df["category"] = category
+    left_df["site"] = site
+
+    return left_df.reset_index()
 
 
-def fanout_to_table_detection(state: State):
+def fanout_to_fragments_detection(state: State):
     return [
-        Send("detect_tables", {"snippet": snippet, "query": state["query"]})
+        Send(
+            "fragments_detection",
+            {
+                "snippets": [snippet],
+                "tasks": state["tasks"],
+                "query": state["query"],
+                "xpath_query": state["xpath_query"],
+            },
+        )
         for snippet in state["snippets"]
     ]
 
@@ -206,13 +226,11 @@ def build_graph(memory=None):
     builder.add_node("query_conversion", query_conversion_node)
     builder.add_node("fragments_detection", fragments_detection_node)
     builder.add_node("program_xpath", program_xpath_node)
-    # builder.add_node("rank_xpath", rank_xpath_node)
-    # builder.add_node("test_xpath", test_xpath_node)
 
     # add edges
     builder.add_edge(START, "query_conversion")
-    builder.add_conditional_edges("query_conversion", fanout_to_table_detection)
-    builder.add_conditional_edges("detect_tables", fanout_to_program_xpath)
+    builder.add_conditional_edges("query_conversion", fanout_to_fragments_detection)
+    builder.add_conditional_edges("fragments_detection", fanout_to_program_xpath)
     builder.add_edge("program_xpath", END)
 
     return builder.compile(checkpointer=memory)
@@ -236,29 +254,35 @@ def build_state(files: List[str], query: str) -> State:
 
 
 if __name__ == "__main__":
-    import sqlite3
+    candidates = [
+        # ("auto", "aol"),
+        # ("auto", "msn"),
+        # ("book", "buy"),
+        # ("camera", "ecost"),
+        # ("job", "hotjobs"),
+        # ("movie", "allmovie"),
+        # ("movie", "rottentomatoes"),
+        # ("nbaplayer", "slam"),
+        ("restaurant", "pickarestaurant"),
+        # ("university", "collegeprowler"),
+    ]
 
-    conn = sqlite3.connect("checkpoints.sqlite", check_same_thread=False)
-    memory = SqliteSaver(conn)
-    category = "university"
-    site = "embark"
-    random_state = 42
-    root_dir = "data/swde"
-    query = open(f"datasets/swde/questions_cn/{category}_{site}.txt", "r").read()
+    dfs = []
+    for category, site in candidates:
+        random_state = 0
+        root_dir = "data/swde"
+        query = open(f"datasets/swde/questions_cn/{category}_{site}.txt", "r").read()
 
-    df = pd.read_csv("swde_token_stats.csv")
-    df = df[(df["category"] == category) & (df["site"] == site)]
-    df = df.sample(5, random_state=random_state)
+        df = pd.read_csv("data/swde_token_stats.csv")
+        df = df[(df["category"] == category) & (df["site"] == site)]
+        df = df.sample(3, random_state=random_state)
 
-    files = [os.path.join(root_dir, x) for x in df["file_path"]]
-    graph = build_graph()
-    state = build_state(files, query)
+        files = [os.path.join(root_dir, x) for x in df["file_path"]]
+        graph = build_graph()
+        state = build_state(files, query)
 
-    # config = {"configurable": {"thread_id": "2"}}
-    state = graph.invoke(state)
-    df = rank_xpath_node(state)
-    df.to_csv("ranked_xpaths.csv", index=False)
-    # state = graph.get_state(config)
-    # for event in graph.stream(state, config):
-    #     print(event)
-    #     pass
+        state = graph.invoke(state)
+        df = rank_xpath_node(state, category, site)
+        dfs.append(df)
+    df = pd.concat(dfs)
+    df.to_csv("data/swde_xpath_program.csv", index=False)

@@ -293,7 +293,17 @@ def rank_xpath_node(state):
     df["n_extracted"] = 0
     for snippet in state["snippets"]:
         tree = get_tree(snippet, compact=False)
-        df["n_extracted"] += df["xpath"].apply(lambda x: 1 if len(tree.xpath(x)) else 0)
+        df["n_extracted"] += df["xpath"].apply(
+            lambda x: (
+                1
+                if len(
+                    tree.xpath(
+                        x, namespaces={"re": "http://exslt.org/regular-expressions"}
+                    )
+                )
+                else 0
+            )
+        )
 
     # take the first xpath
     left_df = (

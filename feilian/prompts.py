@@ -66,7 +66,7 @@ EXTRACTION_PROMPT_CN = ChatPromptTemplate.from_messages(
 
 XPATH_PROGRAM_PROMPT_HISTORY_CN = [
     SystemMessage(
-        "根据问题，编写提取各个字段的 XPath 规则，并使用 JSON 输出。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。"
+        "根据问题，编写提取各个字段的 XPath，并使用 JSON 输出。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。注意，与标准 XPath 不同，这里可使用 regex，比如`re:test` 和 `re:match`来增加 xpath 的通用性。编写 xpath 时，优先使用结构及标签语义。其次谨慎使用regex，及其关键词，以便在相似结构但内容不同的网站上使用。"
     ),
     HumanMessage(
         '```html\n<table><tr><td>3个</td><td>苹果</td></tr><tr><tr><td>4个</td><td>香蕉</td></tr></table>\n```\n\n\n问题：几个柠檬？\n回答格式：{{"n_lemons": "..."}}'

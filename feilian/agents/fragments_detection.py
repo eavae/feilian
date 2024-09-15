@@ -1,5 +1,6 @@
 import tiktoken
 import json
+import functools
 from typing_extensions import TypedDict
 from typing import List, Optional, Annotated, Dict
 from enum import Enum
@@ -9,11 +10,11 @@ from langgraph.constants import Send
 from langchain_openai import ChatOpenAI
 from copy import deepcopy
 
-from feilian.agents.reducers import replace_with_xpath
 from feilian.etree_tools import parse_html, clean_html, to_string
 from feilian.etree_token_stats import extract_fragments_by_weight
 from feilian.text_tools import convert_html_to_text
 from feilian.prompts import EXTRACTION_PROMPT_CN, EXTRACTION_PROMPT_HISTORY
+from feilian.agents.reducers import merge_operators
 
 
 encoder = tiktoken.encoding_for_model("gpt-4")
@@ -34,10 +35,10 @@ class Operator(TypedDict):
 class Snippet(TypedDict):
     id: str
     raw_html: str
-    ops: Annotated[List[Operator], replace_with_xpath]
+    ops: Annotated[List[Operator], merge_operators]
 
 
-class State(Snippet):
+class FragmentDetectionState(Snippet):
     query: str
 
 
@@ -47,12 +48,12 @@ def tokenizer(text):
     return len(encoder.encode(text))
 
 
-def extract_fragments_node(state: State) -> State:
+def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionState:
     ops = []
     tree = parse_html(state["raw_html"])
     clean_html(tree)
 
-    for xpath in extract_fragments_by_weight(tree, tokenizer, until=256):
+    for xpath in extract_fragments_by_weight(tree, tokenizer, until=64):
         nodes = tree.xpath(xpath)
 
         node_texts = []
@@ -64,8 +65,9 @@ def extract_fragments_node(state: State) -> State:
             n.getparent().remove(n)
 
         text = "\n".join(node_texts)
-        print(f"xpath: {xpath}, tokens: {tokenizer(text)}")
         ops.append({"xpath": xpath, "text": text})
+
+        print(f"[Fragment:{state['id']}] xpath: {xpath}, tokens: {tokenizer(text)}")
 
     return {
         "id": state["id"],
@@ -91,27 +93,39 @@ def _create_extraction_chain():
 extraction_chain = _create_extraction_chain()
 
 
-def detect_fragment_node(state: State) -> State:
+def detect_fragment_node(state: FragmentDetectionState) -> FragmentDetectionState:
     operator = state["ops"][0]
-    response = extraction_chain.invoke(
-        {
-            "context": operator["text"],
-            "query": state["query"],
+    if operator["text"] and operator["text"].strip():
+        response = extraction_chain.invoke(
+            {
+                "context": operator["text"],
+                "query": state["query"],
+            }
+        )
+        data = json.loads(response.content)
+        data = {k: v for k, v in data.items() if k != "_thought" and v}
+        print(
+            f"[Detection:{state['id']}] xpath: {operator['xpath']}, extracted: {data}"
+        )
+        return {
+            "ops": [{"xpath": operator["xpath"], "data": data}],
         }
-    )
-    data = json.loads(response.content)
-    print(f"xpath: {operator['xpath']}, extracted: {data}")
-    data = {k: v for k, v in data.items() if k != "_thought" and v}
-    return {
-        "ops": [{"xpath": operator["xpath"], "data": data}],
-    }
+    return {"ops": [{"xpath": operator["xpath"], "data": {}}]}
 
 
-def classify_fragments_node(state: State) -> State:
+def _operator_sort_fn(a: Operator, b: Operator):
+    if len(a["data"]) == len(b["data"]):
+        if a["xpath"] == b["xpath"]:
+            return 0
+        return 1 if a["xpath"] > b["xpath"] else -1
+    return len(a["data"]) - len(b["data"])
+
+
+def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionState:
     ops = deepcopy(state["ops"])
 
     # sort ops by data fields length
-    ops.sort(key=lambda x: len(x["data"]), reverse=True)
+    ops.sort(key=functools.cmp_to_key(_operator_sort_fn), reverse=True)
 
     # classify ops by overlapping data fields
     classify = {}
@@ -142,7 +156,9 @@ def classify_fragments_node(state: State) -> State:
     return {"ops": ops}
 
 
-def fanout_to_fragment_detection(state: State) -> List[State]:
+def fanout_to_fragment_detection(
+    state: FragmentDetectionState,
+) -> List[FragmentDetectionState]:
     ops = state["ops"]
     return [
         Send(
@@ -159,7 +175,7 @@ def fanout_to_fragment_detection(state: State) -> List[State]:
 
 
 def build_graph():
-    builder = StateGraph(State)
+    builder = StateGraph(FragmentDetectionState)
 
     builder.add_node("extract_fragments", extract_fragments_node)
     builder.add_node("detect_fragment", detect_fragment_node)
@@ -172,6 +188,8 @@ def build_graph():
 
     return builder.compile()
 
+
+fragment_detection_graph = build_graph()
 
 if __name__ == "__main__":
     import pandas as pd

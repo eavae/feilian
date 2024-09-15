@@ -176,7 +176,7 @@ def _clean_html(ele: etree._Element):
         return
 
     # 移除空白元素
-    if hasattr(ele, "tag") and ele.tag != "img" and not ele.getchildren():
+    if hasattr(ele, "tag") and not ele.getchildren():
         text = ele.text.strip() if ele.text else ""
         if not text:
             _remove(ele)
@@ -190,7 +190,7 @@ def _clean_html(ele: etree._Element):
     # 移除多余属性
     if ele.attrib:
         for key in list(ele.attrib.keys()):
-            if key not in ["class", "id", "title", "alt", "href", "src"]:
+            if key not in ["class", "id", "title"]:
                 del ele.attrib[key]
 
         # 移除 href="javascript:*"
@@ -338,7 +338,6 @@ def prune_by_xpath(
     """
     根据 xpath 进行修剪
     保留 includes 周围的节点
-    删除 excludes 一致的节点
     return bool: 是否应继续遍历
     """
     is_in_path = any([x.startswith(xpath) for x in includes])
@@ -346,7 +345,8 @@ def prune_by_xpath(
     if not is_in_path and not is_contained:
         include_parent = any([x.startswith(parent_xpath(xpath)) for x in includes])
         if include_parent:
-            prune_to_text(ele)
+            ele.clear()
+            ele.text = ""
             return False
 
     return True
@@ -378,7 +378,9 @@ def decode_url(element: etree._Element):
 
 def apply_trim_rules(root: etree._Element, rules: List[str]):
     for rule in rules:
-        for ele in root.xpath(rule):
+        for ele in root.xpath(
+            rule, namespaces={"re": "http://exslt.org/regular-expressions"}
+        ):
             ele.getparent().remove(ele)
     return root
 
