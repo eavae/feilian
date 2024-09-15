@@ -21,7 +21,7 @@ from feilian.soup_tools import (
     get_tables_max_width,
     get_tables_width,
 )
-from feilian.etree_token_stats import build_token_tree, remove_node
+from feilian.etree_token_stats import extract_fragments_by_weight
 from feilian.etree_tools import parse_html, clean_html as etree_clean_html, to_string
 
 SWDE_DATA_ROOT = "data/swde"
@@ -388,55 +388,38 @@ def swde_table_correlation_analyse(file_path: str):
     fig.show()
 
 
-def swde__stats_parallel_pruning_row(row, until=512):
+def swde__stats_parallel_pruning_row(row, until_html_tokens, max_text_tokens):
     html_file_path = os.path.join(SWDE_DATA_ROOT, row["file_path"])
     html = open(html_file_path).read()
+
     tree = parse_html(html)
     etree_clean_html(tree)
+    initial_tokens = tokenizer(minify(to_string(tree)))
+    fragment_tokens = []
 
-    removed_tokens = []
-    removed_depths = []
-    removed_xpath = []
-    token_tree = build_token_tree(tree, tokenizer, only_text=True)
-    token_tree.reweighing(token_tree.max_depth, token_tree.token, token_tree.max_width)
-    node = token_tree.most_weighted_node
-    while node and token_tree.token > until:
-        remove_node(node)
+    for xpath in extract_fragments_by_weight(
+        tree, tokenizer, until_html_tokens, max_text_tokens
+    ):
+        for node in tree.xpath(xpath):
+            node.clear()
+            node.text = ""
+        tokens = tokenizer(minify(to_string(tree)))
+        fragment_tokens.append(initial_tokens - tokens)
+        initial_tokens = tokens
 
-        removed_tokens.append(node.token)
-        removed_depths.append(node.depth)
-        removed_xpath.append(node.xpath)
-
-        if token_tree.token > 0:
-            token_tree.reweighing(
-                token_tree.max_depth, token_tree.token, token_tree.max_width
-            )
-            node = token_tree.most_weighted_node
-        else:
-            node = None
-
-    for xpath in removed_xpath:
-        ele = tree.xpath(xpath)
-        if isinstance(ele, list):
-            for e in ele:
-                e.getparent().remove(e)
-        elif ele is not None:
-            ele.getparent().remove(ele)
-
-    row["removed_tokens"] = json.dumps(removed_tokens)
-    row["removed_depths"] = json.dumps(removed_depths)
-    row["removed_xpath"] = json.dumps(removed_xpath)
-    row["pruned_tokens"] = tokenizer(minify(to_string(tree)))
+    row["fragment_tokens"] = json.dumps(fragment_tokens)
+    row["finial_tokens"] = initial_tokens
 
     return row
 
 
 def swde__stats_parallel_pruning():
-    # from pandarallel import pandarallel
+    from pandarallel import pandarallel
 
-    # pandarallel.initialize(progress_bar=True, nb_workers=4)
+    pandarallel.initialize(progress_bar=True, nb_workers=12)
 
     df = pd.read_csv("data/swde_token_stats.csv")
+    # df = df.iloc[0:1]
 
     # sample 16 per group, group by category, site
     df = df.groupby(["category", "site"]).apply(
@@ -450,71 +433,81 @@ def swde__stats_parallel_pruning():
     # remove index
     df.reset_index(drop=True, inplace=True)
 
-    df = df.progress_apply(swde__stats_parallel_pruning_row, axis=1)
-    df.to_csv("data/swde_parallel_pruning.csv")
+    dfs = []
+    experiments = [
+        (1024, 256),
+        (1024 * 2, 256),
+        (1024 * 3, 256),
+        (1024, 512),
+        (1024 * 2, 512),
+        (1024 * 3, 512),
+        (1024, 1024),
+        (1024 * 2, 1024),
+        (1024 * 3, 1024),
+    ]
+    for until_html_tokens, max_text_tokens in experiments:
+        exp_df = df.parallel_apply(
+            swde__stats_parallel_pruning_row,
+            axis=1,
+            args=(until_html_tokens, max_text_tokens),
+        )
+        exp_df["until_html_tokens"] = until_html_tokens
+        exp_df["max_text_tokens"] = max_text_tokens
+        dfs.append(exp_df)
+    exp_df = pd.concat(dfs)
+
+    exp_df.to_csv("data/swde_parallel_pruning_exp.csv")
 
 
 # 绘制 html 片段数量统计
-# 绘制 4 张图，分别是 1024, 2048, 3072, 4096 的片段数量统计
-# 横坐标是 cleaned_tokens 的分桶
-# 纵坐标是 fragment_count 的分布（均值，95% 分位数，5% 分位数）
+# 散点图
 def swde__plot_fragment_count_stats():
 
-    # from plotly.subplots import make_subplots
+    from plotly.subplots import make_subplots
     import plotly.graph_objects as go
 
-    df = pd.read_csv("data/swde_parallel_pruning.csv")
-    df["cleaned_tokens"] = df["cleaned_tokens"].apply(lambda x: x // 1000 * 1000)
-    df["fragment_count"] = df["removed_tokens"].apply(lambda x: len(json.loads(x)))
+    df = pd.read_csv("data/swde_parallel_pruning_exp.csv")
+    df["fragment_tokens"] = df["fragment_tokens"].apply(lambda x: json.loads(x))
+    df["fragment_count"] = df["fragment_tokens"].apply(lambda x: len(x))
 
-    # fig = make_subplots(
-    #     rows=2,
-    #     cols=2,
-    #     subplot_titles=["1024", "2048", "3072", "4096"],
-    # )
-    # for i, limit in enumerate([1024, 2048, 3072, 4096]):
-    # row, col = i // 2 + 1, i % 2 + 1
-
-    fig = go.Figure()
-    group_df = df.groupby("cleaned_tokens")["fragment_count"].apply(
-        lambda x: pd.Series(x).describe(percentiles=[0.05, 0.95])
+    experiments = [
+        (1024, 256),
+        (1024 * 2, 256),
+        (1024 * 3, 256),
+        (1024, 512),
+        (1024 * 2, 512),
+        (1024 * 3, 512),
+        (1024, 1024),
+        (1024 * 2, 1024),
+        (1024 * 3, 1024),
+    ]
+    fig = make_subplots(
+        rows=3,
+        cols=3,
+        subplot_titles=[
+            f"until_html_tokens={until_html_tokens}, max_text_tokens={max_text_tokens}"
+            for (until_html_tokens, max_text_tokens) in experiments
+        ],
     )
-    group_df = group_df.unstack().reset_index()
-
-    fig.add_trace(
-        go.Scatter(
-            x=group_df["cleaned_tokens"],
-            y=group_df["mean"],
-            name="mean",
-            mode="markers",
-            showlegend=False,
-            marker=dict(color="blue", size=np.log(group_df["count"]) * 4),
+    titles = []
+    for i, (until_html_tokens, max_text_tokens) in enumerate(experiments):
+        row, col = i // 3 + 1, i % 3 + 1
+        exp_df = df[
+            (df["until_html_tokens"] == until_html_tokens)
+            & (df["max_text_tokens"] == max_text_tokens)
+        ]
+        fig.add_trace(
+            go.Scatter(
+                x=exp_df["cleaned_tokens"],
+                y=exp_df["fragment_count"],
+                mode="markers",
+                name=f"{until_html_tokens}-{max_text_tokens}",
+            ),
+            row=row,
+            col=col,
         )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=group_df["cleaned_tokens"],
-            y=group_df["5%"],
-            name="5%",
-            mode="markers",
-            showlegend=False,
-            marker=dict(color="blue", size=8),
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=group_df["cleaned_tokens"],
-            y=group_df["95%"],
-            name="95%",
-            mode="markers",
-            showlegend=False,
-            marker=dict(color="blue", size=8),
-        )
-    )
-
-    fig.update_layout(height=1024, title_text="Fragment Count Stats")
+        titles.append(f"{until_html_tokens}-{max_text_tokens}")
+    # fig.for_each_annotation(lambda a: a.update(text=))
     fig.show()
     pass
 
@@ -582,9 +575,9 @@ def swde__plot_fragment_token_stats():
 
 if __name__ == "__main__":
     # swde__stats_token("data/swde.parquet")
-    swde__stats_parallel_pruning()
+    # swde__stats_parallel_pruning()
     swde__plot_fragment_count_stats()
-    swde__plot_fragment_token_stats()
+    # swde__plot_fragment_token_stats()
 
     # structure, cleaned_html = read_and_structure_html(
     #     "sourceCode/sourceCode/restaurant/restaurant-pickarestaurant(2000)/0000.htm"
@@ -595,4 +588,23 @@ if __name__ == "__main__":
 
     # with open("structure_test.html", "w") as f:
     #     f.write(structure)
-    pass
+
+    # html_text = open(
+    #     os.path.join(
+    #         SWDE_DATA_ROOT, "sourceCode/sourceCode/auto/auto-aol(2000)/0392.htm"
+    #     ),
+    #     "r",
+    # ).read()
+    # tree = parse_html(html_text)
+    # etree_clean_html(tree)
+    # initial_tokens = tokenizer(minify(to_string(tree)))
+    # fragment_tokens = []
+
+    # for xpath in extract_fragments_by_weight(tree, tokenizer, only_text=True, until=64):
+    #     for node in tree.xpath(xpath):
+    #         node.clear()
+    #         node.text = ""
+    #     tokens = tokenizer(minify(to_string(tree)))
+    #     fragment_tokens.append(initial_tokens - tokens)
+    #     initial_tokens = tokens
+    # pass

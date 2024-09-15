@@ -53,7 +53,7 @@ def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionSt
     tree = parse_html(state["raw_html"])
     clean_html(tree)
 
-    for xpath in extract_fragments_by_weight(tree, tokenizer, until=64):
+    for xpath in extract_fragments_by_weight(tree, tokenizer):
         nodes = tree.xpath(xpath)
 
         node_texts = []
@@ -62,7 +62,8 @@ def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionSt
             html_fragment = to_string(n)
             text = convert_html_to_text(html_fragment)
             node_texts.append(text)
-            n.getparent().remove(n)
+            n.clear()
+            n.text = ""
 
         text = "\n".join(node_texts)
         ops.append({"xpath": xpath, "text": text})
@@ -125,18 +126,22 @@ def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionS
     ops = deepcopy(state["ops"])
 
     # sort ops by data fields length
-    ops.sort(key=functools.cmp_to_key(_operator_sort_fn), reverse=True)
+    # ops.sort(key=functools.cmp_to_key(_operator_sort_fn), reverse=True)
 
     # classify ops by overlapping data fields
     classify = {}
-    all_keys = set()
+    # all_keys = set()
     for op in ops:
         keys = set(op["data"].keys())
-        if keys.issubset(all_keys):
-            classify[op["xpath"]] = OperatorTypes.PRUNE
-        else:
+        # if keys.issubset(all_keys):
+        #     classify[op["xpath"]] = OperatorTypes.PRUNE
+        # else:
+        #     classify[op["xpath"]] = OperatorTypes.EXTRACT
+        #     all_keys.update(keys)
+        if len(keys) > 0:
             classify[op["xpath"]] = OperatorTypes.EXTRACT
-            all_keys.update(keys)
+        else:
+            classify[op["xpath"]] = OperatorTypes.PRUNE
 
     # fix prune ops based on tree structure
     removes = set()
@@ -208,7 +213,7 @@ if __name__ == "__main__":
 
     df = pd.read_csv("data/swde_token_stats.csv")
     df = df[(df["category"] == category) & (df["site"] == site)]
-    row = df.sample(1, random_state=random_state).iloc[0]
+    row = df.sample(3, random_state=random_state).iloc[0]
 
     html = open(os.path.join(root_dir, row["file_path"])).read()
     state = {

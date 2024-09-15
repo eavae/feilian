@@ -392,3 +392,10 @@ def extraction_based_pruning(
         tree,
         lambda ele, xpath: prune_by_xpath(ele, xpath, includes=includes),
     )
+
+
+def remove_by_xpath(tree: etree._Element, xpath: str):
+    for ele in tree.xpath(
+        xpath, namespaces={"re": "http://exslt.org/regular-expressions"}
+    ):
+        ele.getparent().remove(ele)

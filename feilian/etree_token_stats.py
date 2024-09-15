@@ -4,29 +4,37 @@ from lxml import etree
 from collections import defaultdict
 from feilian.html_constants import INLINE_ELEMENTS, CONTAINER_ELEMENTS
 
-MIN_TEXT_TOKEN = 256
+MIN_TEXT_TOKEN = 64
+MAX_TEXT_TOKEN = 512
+
 MIN_HTML_TOKEN = 512
-
-
-def logistic(x):
-    return 1 / (1 + np.exp(-5 * (x / 2 - 1)))
+MAX_HTML_TOKEN = 6144
 
 
 class Node:
     xpath: str
-    token: int
+    text_tokens: int
+    html_tokens: int
     ele: etree._Element
     children: List["Node"]
     parent: "Node" = None
     depth: int
     weight: int
 
-    def __init__(self, xpath: str, token: int, ele: etree._Element, depth):
+    def __init__(
+        self,
+        xpath: str,
+        ele: etree._Element,
+        depth: int,
+        html_tokens: int,
+        text_tokens: int,
+    ):
         self.xpath = xpath
-        self.token = token
         self.ele = ele
         self.children = []
         self.depth = depth
+        self.text_tokens = text_tokens
+        self.html_tokens = html_tokens
 
     @property
     def max_depth(self):
@@ -35,10 +43,16 @@ class Node:
         return max(child.max_depth for child in self.children)
 
     @property
-    def max_token(self):
+    def max_text_token(self):
         if not self.children:
-            return self.token
-        return max(child.max_token for child in self.children)
+            return self.text_tokens
+        return max(child.max_text_token for child in self.children)
+
+    @property
+    def max_html_token(self):
+        if not self.children:
+            return self.html_tokens
+        return max(child.max_html_token for child in self.children)
 
     @property
     def leafs(self):
@@ -67,10 +81,15 @@ class Node:
         return max(weighted_children, key=lambda x: x.weight)
 
     def reweighing(
-        self, max_depth: int, total_token: int, max_width: int, only_text=True
+        self,
+        max_depth: int,
+        max_width: int,
+        total_text_tokens: int,
+        max_tokens=None,
+        min_tokens=None,
     ):
         depth_weight = self.depth / max_depth
-        token_weight = np.tanh(self.token / total_token) * 0.8
+        token_weight = np.tanh(self.text_tokens / total_text_tokens)
         width_weight = self.width / max_width
 
         element_weight = 0.6
@@ -90,13 +109,18 @@ class Node:
             element_weight = 0.8
 
         weight = depth_weight + token_weight + width_weight + element_weight
-        min_token = only_text and MIN_TEXT_TOKEN or MIN_HTML_TOKEN
-        if self.token < min_token:
+        if self.text_tokens < min_tokens or self.text_tokens > max_tokens:
             weight = 0
         self.weight = weight
 
         for child in self.children:
-            child.reweighing(max_depth, total_token, max_width)
+            child.reweighing(
+                max_depth,
+                total_text_tokens,
+                max_width,
+                max_tokens,
+                min_tokens,
+            )
 
     def add_child(self, child: "Node"):
         child.parent = self
@@ -108,11 +132,7 @@ class Node:
 
 
 def _build_token_tree(
-    root: etree._Element,
-    xpath: str,
-    depth: int,
-    tokenizer: Callable,
-    only_text=True,
+    root: etree._Element, xpath: str, depth: int, tokenizer: Callable
 ) -> Node:
     # children
     tag_counts = defaultdict(int)
@@ -127,36 +147,35 @@ def _build_token_tree(
         if tag_counts[ele.tag] > 1:
             new_xpath = f"{xpath}/{ele.tag}[{tag_order[ele.tag] + 1}]"
         tag_order[ele.tag] += 1
-        children.append(
-            _build_token_tree(
-                ele,
-                new_xpath,
-                depth + 1,
-                tokenizer,
-                only_text,
-            )
-        )
+        children.append(_build_token_tree(ele, new_xpath, depth + 1, tokenizer))
 
     # count token, not accurate, but enough for comparison
     text = root is not None and root.text or ""
     text = text.strip()
     text_token = tokenizer(text)
-    if only_text:
-        token = sum(child.token for child in children) + text_token
-    else:
-        attr_str = " ".join(f"{k}='{v}'" for k, v in root.items())
-        element_str = f"<{root.tag} {attr_str}></{root.tag}>"
-        element_token = tokenizer(element_str)
-        token = sum(child.token for child in children) + text_token + element_token
+    text_tokens = sum(child.text_tokens for child in children) + text_token
 
-    node = Node(xpath=xpath, token=token, ele=root, depth=depth)
+    attr_str = " ".join(f"{k}='{v}'" for k, v in root.items())
+    element_str = f"<{root.tag} {attr_str}></{root.tag}>"
+    element_token = tokenizer(element_str)
+    html_tokens = (
+        sum(child.html_tokens for child in children) + text_token + element_token
+    )
+
+    node = Node(
+        xpath=xpath,
+        ele=root,
+        depth=depth,
+        text_tokens=text_tokens,
+        html_tokens=html_tokens,
+    )
     node.add_children(children)
 
     return node
 
 
 def build_token_tree(
-    tree: etree._ElementTree | etree._Element, tokenizer: Callable, only_text=True
+    tree: etree._ElementTree | etree._Element, tokenizer: Callable
 ) -> Node:
 
     if isinstance(tree, etree._ElementTree):
@@ -170,7 +189,7 @@ def build_token_tree(
         root = tree
         xpath = f"/{tree.tag}"
 
-    return _build_token_tree(root, xpath, 1, tokenizer, only_text)
+    return _build_token_tree(root, xpath, 1, tokenizer)
 
 
 def find_node(node: Node, token_below: int) -> Node:
@@ -180,8 +199,8 @@ def find_node(node: Node, token_below: int) -> Node:
     max_token = 0
     max_node = None
     for child in node.children:
-        if child.token > max_token:
-            max_token = child.token
+        if child.text_tokens > max_token:
+            max_token = child.text_tokens
             max_node = child
 
     if max_token <= token_below:
@@ -195,7 +214,7 @@ def remove_node(node: Node):
     node.parent.children.remove(node)
     node.parent = None
     while parent:
-        parent.token -= node.token
+        parent.text_tokens -= node.text_tokens
         parent = parent.parent
 
 
@@ -205,13 +224,13 @@ def remove_node_until(
     times = 0
     remove_tokens = []
 
-    while tree.token > until:
+    while tree.text_tokens > until:
         node = find_node(tree, token_below)
         remove_node(node)
 
         times += 1
-        remove_tokens.append(node.token)
-    remove_tokens.append(tree.token)
+        remove_tokens.append(node.text_tokens)
+    remove_tokens.append(tree.text_tokens)
 
     return times, remove_tokens
 
@@ -219,19 +238,22 @@ def remove_node_until(
 def extract_fragments_by_weight(
     tree: etree._ElementTree | etree._Element,
     tokenizer: Callable,
-    only_text=True,
-    until: int = 468,
+    until_html_tokens: int = 2048,
+    max_text_tokens: int = 1024,
 ):
-    token_tree = build_token_tree(tree, tokenizer, only_text)
+    token_tree: Node = build_token_tree(tree, tokenizer)
     while True:
-        if token_tree.token < until:
+        if token_tree.html_tokens < until_html_tokens:
+            break
+        if token_tree.text_tokens == 0:
             break
 
         token_tree.reweighing(
             token_tree.max_depth,
-            token_tree.token,
             token_tree.max_width,
-            only_text,
+            token_tree.text_tokens,
+            max_tokens=max_text_tokens,
+            min_tokens=max_text_tokens // 8,
         )
         node = token_tree.most_weighted_node
 

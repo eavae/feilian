@@ -123,20 +123,32 @@ def fragments_detection_node(state: State) -> State:
 program_xpath = _create_program_xpath_chain()
 
 
-def program_xpath_node(state):
-    snippet = state["snippet"]
-    query = state["query"]
+def program_xpath_node(state: State):
+    query = state["xpath_query"]
 
-    tree = parse_html(snippet["raw_html"])
-    clean_html(tree)
-    tokens_before = tokenizer(minify(to_string(tree)))
+    tokens_before = 0
+    tokens_after = 0
+    htmls = []
+    for snippet in state["snippets"]:
+        tree = parse_html(snippet["raw_html"])
+        clean_html(tree)
+        tokens_before += tokenizer(minify(to_string(tree)))
 
-    tree = run_operators(tree, snippet)
-    html = to_string(tree)
-    minified_html = minify(html)
-    tokens_after = tokenizer(minified_html)
+        tree = run_operators(tree, snippet)
+        html = to_string(tree)
+        minified_html = minify(html)
+        tokens_after += tokenizer(minified_html)
 
-    response = program_xpath.invoke(dict(html=minified_html, query=query))
+        htmls.append(minified_html)
+
+    response = program_xpath.invoke(
+        dict(
+            query=query,
+            html0=htmls[0],
+            html1=htmls[1],
+            html2=htmls[2],
+        )
+    )
     data = json_repair.repair_json(response.content, return_objects=True)
 
     tasks = []
@@ -149,6 +161,12 @@ def program_xpath_node(state):
 
         if not xpath:
             continue
+
+        if isinstance(xpath, list):
+            xpath = xpath[0]
+
+        if isinstance(xpath, dict):
+            xpath = " | ".join(set(xpath.values()))
 
         tasks.append(dict(field_name=field_name, xpath=xpath))
 
@@ -212,11 +230,11 @@ def fanout_to_fragments_detection(state: State):
     ]
 
 
-def fanout_to_program_xpath(state: State):
-    return [
-        Send("program_xpath", {"snippet": snippet, "query": state["xpath_query"]})
-        for snippet in state["snippets"]
-    ]
+# def fanout_to_program_xpath(state: State):
+#     return [
+#         Send("program_xpath", {"snippet": snippet, "query": state["xpath_query"]})
+#         for snippet in state["snippets"]
+#     ]
 
 
 def build_graph(memory=None):
@@ -230,7 +248,7 @@ def build_graph(memory=None):
     # add edges
     builder.add_edge(START, "query_conversion")
     builder.add_conditional_edges("query_conversion", fanout_to_fragments_detection)
-    builder.add_conditional_edges("fragments_detection", fanout_to_program_xpath)
+    builder.add_edge("fragments_detection", "program_xpath")
     builder.add_edge("program_xpath", END)
 
     return builder.compile(checkpointer=memory)
@@ -256,14 +274,14 @@ def build_state(files: List[str], query: str) -> State:
 if __name__ == "__main__":
     candidates = [
         # ("auto", "aol"),
-        # ("auto", "msn"),
+        ("auto", "msn"),
         # ("book", "buy"),
         # ("camera", "ecost"),
         # ("job", "hotjobs"),
         # ("movie", "allmovie"),
         # ("movie", "rottentomatoes"),
         # ("nbaplayer", "slam"),
-        ("restaurant", "pickarestaurant"),
+        # ("restaurant", "pickarestaurant"),
         # ("university", "collegeprowler"),
     ]
 
@@ -281,8 +299,8 @@ if __name__ == "__main__":
         graph = build_graph()
         state = build_state(files, query)
 
-        state = graph.invoke(state)
+        state = graph.invoke(state, config={"configurable": {"thread_id": "1"}})
         df = rank_xpath_node(state, category, site)
         dfs.append(df)
     df = pd.concat(dfs)
-    df.to_csv("data/swde_xpath_program.csv", index=False)
+    df.to_csv("data/swde_xpath_program_exp.csv", index=False)

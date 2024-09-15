@@ -13,11 +13,11 @@ def replace_with_id(left: T, right: T) -> T:
 
     left_ids = set([x["id"] for x in left])
     right_ids = set([x["id"] for x in right])
-    token_left = left_ids - right_ids
+    taken_left = left_ids - right_ids
 
     left_items = []
     for item in left:
-        if item["id"] in token_left:
+        if item["id"] in taken_left:
             left_items.append(item)
 
     return left_items + right
