@@ -39,22 +39,6 @@ EXTRACTION_PROMPT_HISTORY = [
     SystemMessage(
         "根据问题，从给定的上下文（网页内容）中提取信息，使用 JSON 输出。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。除`_thought`外，禁止包含与提问无关的字段。给定的上下文可能不完整或不包含答案，需根据问题进行推断。输出时，JSON 中不应包含没有提及的字段。"
     ),
-    # HumanMessage(
-    #     '上下文：```<table><tr>三个苹果</tr><tr>四个香蕉</tr></table>````\n\n\n问：水果的总质量。回答格式：{{"mass": "..."}}\n'
-    # ),
-    # AIMessage(json.dumps({"_thought": "表格中没有提到质量，所以质量应该是未知。"})),
-    # HumanMessage(
-    #     '上下文：```<table><tr>三个苹果</tr><tr>四个香蕉</tr></table>```\n\n\n问题：请提供水果名称，总数量，总质量。回答格式：{{"name": ["..."], "total_amount": "...", "mass": "..."}}'
-    # ),
-    # AIMessage(
-    #     json.dumps(
-    #         {
-    #             "_thought": "表格中提到了苹果和香蕉，所以水果名称应该包括苹果和香蕉。表格中提到了三个苹果和四个香蕉，所以总数量应该是7。表格中没有提到质量，所以质量应该是未知。",
-    #             "name": ["苹果", "香蕉"],
-    #             "total_amount": 7,
-    #         }
-    #     )
-    # ),
 ]
 
 EXTRACTION_PROMPT_CN = ChatPromptTemplate.from_messages(
@@ -64,9 +48,25 @@ EXTRACTION_PROMPT_CN = ChatPromptTemplate.from_messages(
     ]
 )
 
+BEST_ANSWERS_PROMPT_CN = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage(
+            "根据问题及给定的上下文（网页内容），选择一组能够恰好构成最佳答案的组合（可以**多选**）。提供答案时，仅列出序号即可，并用`,`分割，禁止输出除选项外的其他内容。"
+        ),
+        HumanMessage(
+            '问题：```text\n有几个苹果和香蕉呢？\n```\n\n\n上下文：```text\n这里有3个苹果、4个香蕉。\n```\n\n\n待选答案：\n1. {{"n_apples": 3}}\n2. {{"n_bananas": 4}}\n3. {{}}'
+        ),
+        AIMessage("1, 2"),
+        (
+            "human",
+            "问题：```text\n{query}\n```\n\n\n上下文：```text\n{context}\n```\n\n\n待选答案：\n{choices}",
+        ),
+    ]
+)
+
 XPATH_PROGRAM_PROMPT_HISTORY_CN = [
     SystemMessage(
-        "根据问题，编写提取各个字段的 XPath，并使用 JSON 输出。当有多个 html 片段时，你需要针对某个字段编写**一个xpath**以适应所有具有相似结构的 html 片段。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。你需要逐字段思考，并根据用户提供的 html 片段，显示的推理并反思。你编写的 xpath 应简洁明了，以适应内容不同但结构相似的网页。注意点：1. 与标准 XPath 不同，这里可使用 regex，比如`re:test` 或 `re:match`来增加xpath的泛用性。2. 编写 xpath 时，优先使用结构及标签语义。使用regex时，仅保留**1-2个关键单词**，以便在相似结构但内容不同的网站上使用。3. text() 函数只会获取当前节点的文本，而不是该节点及以下节点的所有文本，请合理使用。"
+        "根据问题，编写提取各个字段的 XPath，并使用 JSON 输出。当有多个 html 片段时，你需要针对某个字段编写**一个xpath**以适应所有具有相似结构的 html 片段。`_thought`字段是你的思考过程，需始终包含在回答的 json 中。你需要逐字段思考，并根据用户提供的 html 片段，显示的推理并反思。注意点：1. xpath 应简洁明了，优先使用 html 自身的语义规则，比如tag、class、id。2. 可使用 regex，比如`re:test`。3. `text()` 只能够获取当前节点的文本，而不是该节点及以下节点的所有文本，谨慎使用。4. `contains`优于精准匹配，比如`//div[@class='title']`可以写成`//div[contains(@class, 'title')]`。"
     ),
     HumanMessage(
         '```html\n<table><tr><td>3个</td><td>苹果</td></tr><tr><tr><td>4个</td><td>香蕉</td></tr></table>\n```\n\n\n问题：几个香蕉、苹果？\n回答格式：{{"n_apples": "...", "n_bananas": "..."}}'
@@ -74,9 +74,9 @@ XPATH_PROGRAM_PROMPT_HISTORY_CN = [
     AIMessage(
         json.dumps(
             {
-                "_thought": "首先，表格中提到了苹果和香蕉，苹果数量是10，香蕉数量是3。接下来，我需要编写两个 XPath 用以提取苹果和香蕉的数量。1. 苹果，苹果出现在 td 中，表明该元素在表格中，且父级有一个  tr 标签。先获取表格的一行，然后寻找第二个 td 标签会更符合html的语义逻辑，所以我可以使用 `//td[re:test(text(), '苹果')]/../td[2]/text()` 来提取苹果的数量。2. 香蕉，同上，我可以使用 `//td[re:test(text(), '香蕉')]/../td[2]/text()` 来提取香蕉的数量。",
-                "n_apples": "//td[re:test(text(), '苹果')]/../td[2]/text()",
-                "n_bananas": "//td[re:test(text(), '香蕉')]/../td[2]/text()",
+                "_thought": "首先，表格中提到了苹果和香蕉，苹果数量是10，香蕉数量是3。接下来，我需要编写两个 XPath 用以提取苹果和香蕉的数量。1. 苹果，苹果出现在 td 中，表明该元素在表格中，且父级有一个  tr 标签。先获取表格的一行，然后寻找第二个 td 标签会更符合html的语义逻辑。2. 香蕉，同上，只需要将匹配的文本换成香蕉即可",
+                "n_apples": "//td[contains(text(), '苹果')]/../td[2]/text()",
+                "n_bananas": "//td[contains(text(), '香蕉')]/../td[2]/text()",
             }
         )
     ),

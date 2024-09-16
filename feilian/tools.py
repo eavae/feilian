@@ -47,3 +47,7 @@ def find_most_repeated_sub_sequence_html(arr: List[str]):
 
 def uri_params(params, spider):
     return {**params, "spider_name": spider.name}
+
+
+def format_to_ordered_list(texts: List[str]) -> str:
+    return "\n".join([f"{i+1}. {text}" for i, text in enumerate(texts)])

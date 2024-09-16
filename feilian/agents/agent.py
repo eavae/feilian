@@ -4,7 +4,6 @@ import json
 import json_repair
 import pandas as pd
 import warnings
-from lxml import etree
 from typing import List, Annotated
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
@@ -15,12 +14,10 @@ from html5lib.constants import DataLossWarning
 
 from feilian.etree_tools import (
     clean_html,
-    deduplicate_to_prune,
-    extraction_based_pruning,
     to_string,
     parse_html,
 )
-from feilian.agents.fragments_detection import Snippet, OperatorTypes, tokenizer
+from feilian.agents.fragments_detection import Snippet, tokenizer, run_operators
 from feilian.agents.reducers import replace_with_id, append
 from feilian.prompts import (
     XPATH_PROGRAM_PROMPT_HISTORY_CN,
@@ -44,35 +41,10 @@ class State(TypedDict):
     xpath_query: str
 
 
-def run_operators(tree, snippet: Snippet) -> etree._Element:
-
-    # 2. run prune operations
-    prune_ops = [o for o in snippet["ops"] if o["operator_type"] == OperatorTypes.PRUNE]
-    xpaths = deduplicate_to_prune([op["xpath"] for op in prune_ops])
-    for xpath in xpaths:
-        nodes: etree._Element = tree.xpath(xpath)
-        if isinstance(nodes, list):
-            for node in nodes:
-                node.clear()
-                node.text = ""
-        else:
-            nodes.clear()
-            nodes.text = ""
-
-    # 3. run extract operations
-    extract_ops = [
-        o for o in snippet["ops"] if o["operator_type"] == OperatorTypes.EXTRACT
-    ]
-    xpaths = [op["xpath"] for op in extract_ops]
-    extraction_based_pruning(tree, xpaths)
-
-    return tree
-
-
 def _create_program_xpath_chain():
     llm = ChatOpenAI(
         model="deepseek-coder",
-        temperature=0.1,
+        temperature=0,
         model_kwargs={
             "response_format": {
                 "type": "json_object",
@@ -86,7 +58,7 @@ def _create_program_xpath_chain():
 
 
 def _create_question_conversion_chain():
-    llm = ChatOpenAI(model="deepseek-chat", temperature=0.1)
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
     return QUESTION_CONVERSION_COMP_CN | llm
 
 
@@ -134,7 +106,7 @@ def program_xpath_node(state: State):
         clean_html(tree)
         tokens_before += tokenizer(minify(to_string(tree)))
 
-        tree = run_operators(tree, snippet)
+        tree = run_operators(tree, snippet["ops"])
         html = to_string(tree)
         minified_html = minify(html)
         tokens_after += tokenizer(minified_html)
@@ -230,13 +202,6 @@ def fanout_to_fragments_detection(state: State):
     ]
 
 
-# def fanout_to_program_xpath(state: State):
-#     return [
-#         Send("program_xpath", {"snippet": snippet, "query": state["xpath_query"]})
-#         for snippet in state["snippets"]
-#     ]
-
-
 def build_graph(memory=None):
     builder = StateGraph(State)
 
@@ -269,38 +234,3 @@ def build_state(files: List[str], query: str) -> State:
         )
 
     return dict(snippets=snippets, query=query, xpath_query=None)
-
-
-if __name__ == "__main__":
-    candidates = [
-        # ("auto", "aol"),
-        ("auto", "msn"),
-        # ("book", "buy"),
-        # ("camera", "ecost"),
-        # ("job", "hotjobs"),
-        # ("movie", "allmovie"),
-        # ("movie", "rottentomatoes"),
-        # ("nbaplayer", "slam"),
-        # ("restaurant", "pickarestaurant"),
-        # ("university", "collegeprowler"),
-    ]
-
-    dfs = []
-    for category, site in candidates:
-        random_state = 0
-        root_dir = "data/swde"
-        query = open(f"datasets/swde/questions_cn/{category}_{site}.txt", "r").read()
-
-        df = pd.read_csv("data/swde_token_stats.csv")
-        df = df[(df["category"] == category) & (df["site"] == site)]
-        df = df.sample(3, random_state=random_state)
-
-        files = [os.path.join(root_dir, x) for x in df["file_path"]]
-        graph = build_graph()
-        state = build_state(files, query)
-
-        state = graph.invoke(state, config={"configurable": {"thread_id": "1"}})
-        df = rank_xpath_node(state, category, site)
-        dfs.append(df)
-    df = pd.concat(dfs)
-    df.to_csv("data/swde_xpath_program_exp.csv", index=False)

@@ -1,6 +1,7 @@
 import tiktoken
 import json
-import functools
+import os
+import json_repair
 from typing_extensions import TypedDict
 from typing import List, Optional, Annotated, Dict
 from enum import Enum
@@ -9,15 +10,28 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
 from langchain_openai import ChatOpenAI
 from copy import deepcopy
+from markdownify import MarkdownConverter
 
-from feilian.etree_tools import parse_html, clean_html, to_string
+from feilian.etree_tools import (
+    parse_html,
+    clean_html,
+    to_string,
+    deduplicate_to_prune,
+    extraction_based_pruning,
+)
 from feilian.etree_token_stats import extract_fragments_by_weight
 from feilian.text_tools import convert_html_to_text
-from feilian.prompts import EXTRACTION_PROMPT_CN, EXTRACTION_PROMPT_HISTORY
+from feilian.prompts import (
+    EXTRACTION_PROMPT_CN,
+    EXTRACTION_PROMPT_HISTORY,
+    BEST_ANSWERS_PROMPT_CN,
+)
 from feilian.agents.reducers import merge_operators
+from feilian.tools import format_to_ordered_list
 
 
 encoder = tiktoken.encoding_for_model("gpt-4")
+converter = MarkdownConverter()
 
 
 class OperatorTypes(Enum):
@@ -48,6 +62,28 @@ def tokenizer(text):
     return len(encoder.encode(text))
 
 
+def run_operators(tree, ops: List[Operator]) -> etree._Element:
+    # 2. run prune operations
+    prune_ops = [o for o in ops if o["operator_type"] == OperatorTypes.PRUNE]
+    xpaths = deduplicate_to_prune([op["xpath"] for op in prune_ops])
+    for xpath in xpaths:
+        nodes: etree._Element = tree.xpath(xpath)
+        if isinstance(nodes, list):
+            for node in nodes:
+                node.clear()
+                node.text = ""
+        else:
+            nodes.clear()
+            nodes.text = ""
+
+    # 3. run extract operations
+    extract_ops = [o for o in ops if o["operator_type"] == OperatorTypes.EXTRACT]
+    xpaths = [op["xpath"] for op in extract_ops]
+    extraction_based_pruning(tree, xpaths)
+
+    return tree
+
+
 def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionState:
     ops = []
     tree = parse_html(state["raw_html"])
@@ -70,6 +106,9 @@ def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionSt
 
         print(f"[Fragment:{state['id']}] xpath: {xpath}, tokens: {tokenizer(text)}")
 
+    # add /html to ops
+    ops.append({"xpath": "/html", "text": convert_html_to_text(to_string(tree))})
+
     return {
         "id": state["id"],
         "raw_html": state["raw_html"],
@@ -80,8 +119,8 @@ def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionSt
 
 def _create_extraction_chain():
     llm = ChatOpenAI(
-        model="deepseek-chat",
-        temperature=0.1,
+        model=os.getenv("OPENAI_MODEL"),
+        temperature=0,
         model_kwargs={
             "response_format": {
                 "type": "json_object",
@@ -103,7 +142,7 @@ def detect_fragment_node(state: FragmentDetectionState) -> FragmentDetectionStat
                 "query": state["query"],
             }
         )
-        data = json.loads(response.content)
+        data = json_repair.loads(response.content)
         data = {k: v for k, v in data.items() if k != "_thought" and v}
         print(
             f"[Detection:{state['id']}] xpath: {operator['xpath']}, extracted: {data}"
@@ -114,51 +153,82 @@ def detect_fragment_node(state: FragmentDetectionState) -> FragmentDetectionStat
     return {"ops": [{"xpath": operator["xpath"], "data": {}}]}
 
 
-def _operator_sort_fn(a: Operator, b: Operator):
-    if len(a["data"]) == len(b["data"]):
-        if a["xpath"] == b["xpath"]:
-            return 0
-        return 1 if a["xpath"] > b["xpath"] else -1
-    return len(a["data"]) - len(b["data"])
+def _create_best_answer_chain():
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0.1)
+    return BEST_ANSWERS_PROMPT_CN | llm
+
+
+best_answer_chain = _create_best_answer_chain()
 
 
 def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionState:
     ops = deepcopy(state["ops"])
 
-    # sort ops by data fields length
-    # ops.sort(key=functools.cmp_to_key(_operator_sort_fn), reverse=True)
-
-    # classify ops by overlapping data fields
-    classify = {}
-    # all_keys = set()
     for op in ops:
         keys = set(op["data"].keys())
-        # if keys.issubset(all_keys):
-        #     classify[op["xpath"]] = OperatorTypes.PRUNE
-        # else:
-        #     classify[op["xpath"]] = OperatorTypes.EXTRACT
-        #     all_keys.update(keys)
         if len(keys) > 0:
-            classify[op["xpath"]] = OperatorTypes.EXTRACT
+            op["operator_type"] = OperatorTypes.EXTRACT
         else:
-            classify[op["xpath"]] = OperatorTypes.PRUNE
+            op["operator_type"] = OperatorTypes.PRUNE
 
-    # fix prune ops based on tree structure
-    removes = set()
-    extracts = [
-        x["xpath"] for x in ops if classify[x["xpath"]] == OperatorTypes.EXTRACT
-    ]
-    for prune_op in [op for op in ops if classify[op["xpath"]] == OperatorTypes.PRUNE]:
-        if any(x.startswith(prune_op["xpath"]) for x in extracts):
-            removes.add(prune_op["xpath"])
+    # convert choices
+    extract_ops = [op for op in ops if op["operator_type"] == OperatorTypes.EXTRACT]
+    choices = [json.dumps(op["data"]) for op in extract_ops]
 
-    # update operator_type
-    ops = [op for op in ops if op["xpath"] not in removes]
+    # call llm to classify if there are multiple choices
+    if len(choices) > 1:
+        prune_ops = []
+        extract_xpaths = [x["xpath"] for x in extract_ops]
+        for op in ops:
+            if op["operator_type"] == OperatorTypes.PRUNE:
+                if any([x.startswith(op["xpath"]) for x in extract_xpaths]):
+                    continue
+                prune_ops.append(op)
+
+        tree = parse_html(state["raw_html"])
+        clean_html(tree)
+        run_operators(tree, prune_ops)
+        context = converter.convert(to_string(tree))
+
+        choice_str = format_to_ordered_list(choices)
+        response = best_answer_chain.invoke(
+            {
+                "context": context,
+                "query": state["query"],
+                "choices": choice_str,
+            }
+        )
+        best_choices = [int(i) - 1 for i in response.content.split(",")]
+    else:
+        best_choices = [0] if extract_ops else []
+
+    extract_op = [extract_ops[i] for i in best_choices]
+    set_of_extract_xpath = set([op["xpath"] for op in extract_op])
+    data = {}
+    for op in extract_op:
+        data.update(op["data"])
+    print(
+        f"[Classification:{state['id']}] best choices: {set_of_extract_xpath}, data: {data}"
+    )
+
+    # prune fragments
+    output_ops = []
     for op in ops:
-        op["operator_type"] = classify[op["xpath"]]
-        del op["data"]
+        if (
+            op["operator_type"] == OperatorTypes.EXTRACT
+            and op["xpath"] not in set_of_extract_xpath
+        ):
+            op["operator_type"] = OperatorTypes.PRUNE
 
-    return {"ops": ops}
+        if op["operator_type"] == OperatorTypes.PRUNE and any(
+            [x.startswith(op["xpath"]) for x in set_of_extract_xpath]
+        ):
+            continue
+
+        del op["data"]
+        output_ops.append(op)
+
+    return {"ops": output_ops}
 
 
 def fanout_to_fragment_detection(
@@ -195,32 +265,3 @@ def build_graph():
 
 
 fragment_detection_graph = build_graph()
-
-if __name__ == "__main__":
-    import pandas as pd
-    import os
-    import hashlib
-
-    # from langchain.globals import set_debug
-
-    # set_debug(True)
-
-    category = "restaurant"
-    site = "tripadvisor"
-    random_state = 42
-    root_dir = "data/swde"
-    query = open(f"datasets/swde/questions_cn/{category}_{site}.txt", "r").read()
-
-    df = pd.read_csv("data/swde_token_stats.csv")
-    df = df[(df["category"] == category) & (df["site"] == site)]
-    row = df.sample(3, random_state=random_state).iloc[0]
-
-    html = open(os.path.join(root_dir, row["file_path"])).read()
-    state = {
-        "id": hashlib.md5(html.encode()).hexdigest(),
-        "raw_html": html,
-        "query": query,
-    }
-    graph = build_graph()
-    result = graph.invoke(state)
-    pass

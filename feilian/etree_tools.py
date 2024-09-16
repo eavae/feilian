@@ -190,7 +190,7 @@ def _clean_html(ele: etree._Element):
     # 移除多余属性
     if ele.attrib:
         for key in list(ele.attrib.keys()):
-            if key not in ["class", "id", "title"]:
+            if key not in ["class", "id"]:
                 del ele.attrib[key]
 
         # 移除 href="javascript:*"

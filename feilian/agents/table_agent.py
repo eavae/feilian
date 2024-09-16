@@ -1,7 +1,7 @@
 import os
 import hashlib
 import html5lib
-import json
+import json_repair
 import pandas as pd
 from lxml import etree
 from typing import List, Annotated
@@ -123,7 +123,7 @@ def get_tree(snippet: Snippet, compact: bool = True) -> etree._Element:
 
 def _create_table_extraction_chain():
     llm = ChatOpenAI(
-        model="deepseek-chat",
+        model=os.getenv("OPENAI_MODEL"),
         temperature=0.1,
         model_kwargs={
             "response_format": {
@@ -151,7 +151,7 @@ def _create_program_xpath_chain():
 
 
 def _create_question_conversion_chain():
-    llm = ChatOpenAI(model="deepseek-chat", temperature=0.1)
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0.1)
     return QUESTION_CONVERSION_COMP_CN | llm
 
 
@@ -219,7 +219,7 @@ def detect_tables_node(state) -> State:
                 query=query,
             )
         )
-        data = json.loads(response.content)
+        data = json_repair.loads(response.content)
         del data["_thought"]
         data = {key: value for key, value in data.items() if value}
 
@@ -255,7 +255,7 @@ def program_xpath_node(state):
     html = to_string(tree)
     minified_html = minify(html)
     response = chain.invoke(dict(html=minified_html, query=query))
-    data = json.loads(response.content)
+    data = json_repair.loads(response.content)
 
     tasks = []
     for field_name, xpath in data.items():
