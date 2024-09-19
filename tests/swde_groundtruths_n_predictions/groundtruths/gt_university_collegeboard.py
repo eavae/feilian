@@ -18,7 +18,7 @@ df_gt_university_collegeboard_phone = df.copy()
 #print(df_gt_university_collegeboard_phone.head())
 
 
-## groundtruth of university_collegeboard_phone  
+## groundtruth of university_collegeboard_name  
 file_path = '/Users/brycewang/Desktop/智能爬虫/data/swde/sourceCode/sourceCode/groundtruth/university/university-collegeboard-name.txt'
 # Define five column names, filling missing columns with NaN
 df = pd.read_csv(file_path, sep='\t', header=None, engine='python', on_bad_lines='skip', 
