@@ -8,10 +8,10 @@
 答案格式示例：
 ```json
 {
-  "author": ["作者名"],
-  "isbn_13": ["ISBN-13编号"],
-  "publication_date": ["出版日期"],
-  "publisher": ["出版社"],
-  "title": ["书名"]
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
 }
 ```

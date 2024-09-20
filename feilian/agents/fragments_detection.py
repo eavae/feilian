@@ -1,3 +1,4 @@
+import re
 import tiktoken
 import json
 import os
@@ -9,6 +10,7 @@ from lxml import etree
 from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
 from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
 from copy import deepcopy
 from markdownify import MarkdownConverter
 
@@ -25,6 +27,7 @@ from feilian.prompts import (
     EXTRACTION_PROMPT_CN,
     EXTRACTION_PROMPT_HISTORY,
     BEST_ANSWERS_PROMPT_CN,
+    BEST_COMPOSITION_CN,
 )
 from feilian.agents.reducers import merge_operators
 from feilian.tools import format_to_ordered_list
@@ -154,11 +157,34 @@ def detect_fragment_node(state: FragmentDetectionState) -> FragmentDetectionStat
 
 
 def _create_best_answer_chain():
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0.1)
-    return BEST_ANSWERS_PROMPT_CN | llm
+    def parser(response):
+        choices = response.content.strip()
+        choices = [int(x) for x in choices.split(",")]
+        return choices
+
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
+    return BEST_ANSWERS_PROMPT_CN | llm | parser
+
+
+def _create_best_composition_chain():
+    def parser(response):
+        choices = response.content.split("最终结论:")[1].strip()
+        choices = choices.split("\n")[0]
+        try:
+            choices = [int(x.strip()) for x in choices.split(",")]
+        except Exception:
+            # using regex to extract all numbers
+            choices = [int(x) for x in re.findall(r"\d+", choices)]
+
+        return choices
+
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
+    prompt = PromptTemplate.from_template(BEST_COMPOSITION_CN)
+    return prompt | llm | parser
 
 
 best_answer_chain = _create_best_answer_chain()
+best_composition_chain = _create_best_composition_chain()
 
 
 def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionState:
@@ -191,14 +217,14 @@ def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionS
         context = converter.convert(to_string(tree))
 
         choice_str = format_to_ordered_list(choices)
-        response = best_answer_chain.invoke(
+        best_choices = best_composition_chain.invoke(
             {
                 "context": context,
                 "query": state["query"],
                 "choices": choice_str,
             }
         )
-        best_choices = [int(i) - 1 for i in response.content.split(",")]
+        best_choices = [x - 1 for x in best_choices]
     else:
         best_choices = [0] if extract_ops else []
 

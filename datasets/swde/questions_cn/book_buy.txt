@@ -8,10 +8,10 @@
 答案：
 ```json
 {
-  "author": ["Takashi Fujitani"],
-  "isbn_13": ["9780520213715"],
-  "publication_date": ["4/1/1998"],
-  "publisher": ["University of California Press"],
-  "title": ["Splendid Monarchy"]
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
 }
 ```

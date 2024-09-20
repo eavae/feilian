@@ -9,6 +9,7 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
 from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
 from minify_html import minify
 from html5lib.constants import DataLossWarning
 
@@ -23,6 +24,7 @@ from feilian.prompts import (
     XPATH_PROGRAM_PROMPT_HISTORY_CN,
     XPATH_PROGRAM_PROMPT_CN,
     QUESTION_CONVERSION_COMP_CN,
+    COT_PROGRAM_XPATH_PROMPT_CN,
 )
 from feilian.agents.fragments_detection import fragment_detection_graph
 
@@ -39,22 +41,6 @@ class State(TypedDict):
     tasks: Annotated[List[Task], append] = []
     query: str
     xpath_query: str
-
-
-def _create_program_xpath_chain():
-    llm = ChatOpenAI(
-        model="deepseek-coder",
-        temperature=0,
-        model_kwargs={
-            "response_format": {
-                "type": "json_object",
-            },
-        },
-    )
-    return (
-        XPATH_PROGRAM_PROMPT_CN.partial(chat_history=XPATH_PROGRAM_PROMPT_HISTORY_CN)
-        | llm
-    )
 
 
 def _create_question_conversion_chain():
@@ -92,7 +78,46 @@ def fragments_detection_node(state: State) -> State:
     }
 
 
+def _create_program_xpath_chain():
+    def parser(response):
+        return json_repair.repair_json(
+            response.content,
+            return_objects=True,
+        )
+
+    llm = ChatOpenAI(
+        model="deepseek-coder",
+        temperature=0,
+        model_kwargs={
+            "response_format": {
+                "type": "json_object",
+            },
+        },
+    )
+    return (
+        XPATH_PROGRAM_PROMPT_CN.partial(chat_history=XPATH_PROGRAM_PROMPT_HISTORY_CN)
+        | llm
+        | parser
+    )
+
+
 program_xpath = _create_program_xpath_chain()
+
+
+def _create_cot_program_xpath_chain():
+    def parser(response):
+        json_str = response.content.split("最终结论:")[-1].strip()
+        json_str = json_str.split("```")[0].strip()
+        return json_repair.repair_json(json_str, return_objects=True)
+
+    llm = ChatOpenAI(
+        model=os.getenv("OPENAI_MODEL"),
+        temperature=0,
+    )
+    return PromptTemplate.from_template(COT_PROGRAM_XPATH_PROMPT_CN) | llm | parser
+
+
+cot_program_xpath = _create_cot_program_xpath_chain()
 
 
 def program_xpath_node(state: State):
@@ -113,15 +138,21 @@ def program_xpath_node(state: State):
 
         htmls.append(minified_html)
 
-    response = program_xpath.invoke(
-        dict(
-            query=query,
-            html0=htmls[0],
-            html1=htmls[1],
-            html2=htmls[2],
-        )
-    )
-    data = json_repair.repair_json(response.content, return_objects=True)
+    while True:
+        try:
+            data = cot_program_xpath.invoke(
+                dict(
+                    query=query,
+                    html0=htmls[0],
+                    html1=htmls[1],
+                    html2=htmls[2],
+                )
+            )
+            if data:
+                break
+        except Exception as e:
+            print(f"Error: {e}")
+            continue
 
     tasks = []
     for field_name, xpath in data.items():
@@ -219,18 +250,15 @@ def build_graph(memory=None):
     return builder.compile(checkpointer=memory)
 
 
-def build_state(files: List[str], query: str) -> State:
+def build_state(files: List[str], query: str, ids: List[str] = []) -> State:
     snippets = []
-    for file in files:
+    if len(ids) == 0:
+        ids = [None] * len(files)
+
+    for file, id in zip(files, ids):
         raw_html = open(file, "r").read()
         ops = []
-        snippets.append(
-            dict(
-                id=hashlib.md5(raw_html.encode()).hexdigest(),
-                raw_html=raw_html,
-                tables=[],
-                ops=ops,
-            )
-        )
+        id = id or hashlib.md5(raw_html.encode()).hexdigest()
+        snippets.append(dict(id=id, raw_html=raw_html, tables=[], ops=ops))
 
     return dict(snippets=snippets, query=query, xpath_query=None)

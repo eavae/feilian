@@ -176,15 +176,16 @@ def _clean_html(ele: etree._Element):
         return
 
     # 移除空白元素
-    if hasattr(ele, "tag") and not ele.getchildren():
-        text = ele.text.strip() if ele.text else ""
-        if not text:
-            _remove(ele)
-            return
+    # if hasattr(ele, "tag") and not ele.getchildren():
+    #     text = ele.text.strip() if ele.text else ""
+    #     if not text:
+    #         _remove(ele)
+    #         return
 
     # 移除 display:none
     if "style" in ele.attrib and re.search(r"display\s*:\s*none", ele.attrib["style"]):
-        _remove(ele)
+        ele.clear()
+        ele.text = ""
         return
 
     # 移除多余属性

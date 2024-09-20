@@ -6,8 +6,8 @@
 答案格式示例：
 ```json
 {
-  "manufacturer": ["Brand = Sony"],
-  "model": ["Sony DSC-W330 14.1 Megapixel Cyber-shot® Digital Camera W330 - Silver"],
-  "price": ["$149.99"]
+  "manufacturer": ["..."],
+  "model": ["..."],
+  "price": ["..."]
 }
 ```

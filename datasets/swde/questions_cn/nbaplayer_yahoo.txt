@@ -7,9 +7,9 @@
 答案格式示例：
 ```json
 {
-  "height": ["6-5"],
-  "name": ["Daequan Cook"],
-  "team": ["Oklahoma City Thunder"],
-  "weight": ["210"]
+  "height": ["..."],
+  "name": ["..."],
+  "team": ["..."],
+  "weight": ["..."]
 }
 ```

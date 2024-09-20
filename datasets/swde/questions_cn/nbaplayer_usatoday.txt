@@ -1,11 +1,11 @@
-请提供一位著名篮球运动员的姓名、身高、体重以及他曾效力过的球队名称，格式为JSON。
+请提供这名篮球运动员的姓名、身高、体重以及他曾效力过的球队名称，格式为JSON。
 
 答案格式示例：
 ```json
 {
-  "height": ["Height: 7'1'&nbsp;"],
-  "name": ["Shaquille O'Neal"],
-  "team": ["Boston&nbsp;Celtics"],
-  "weight": ["Weight: 325&nbsp;"]
+  "name": ["..."],
+  "height": ["..."],
+  "weight": ["..."]
+  "team": ["..."],
 }
 ```

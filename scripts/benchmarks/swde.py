@@ -2,11 +2,14 @@ import os
 import pandas as pd
 import json
 import tqdm
+import re
+import html
 from typing import Dict, List
 from collections import defaultdict
 
 from feilian.agents.agent import build_graph, build_state, rank_xpath_node
-from feilian.etree_tools import parse_html
+from feilian.etree_tools import parse_html, to_string
+from feilian.text_tools import convert_html_to_text
 
 
 DATA_ROOT = "data/swde"
@@ -19,6 +22,7 @@ def program_xpath(candidates: Dict = None):
         candidates = df[["category", "site"]].drop_duplicates().values.tolist()
 
     dfs = []
+    graph = build_graph()
     for category, site in candidates:
         random_state = 0
         root_dir = "data/swde"
@@ -28,8 +32,8 @@ def program_xpath(candidates: Dict = None):
         df_subset = df_subset.sample(3, random_state=random_state)
 
         files = [os.path.join(root_dir, x) for x in df_subset["file_path"]]
-        graph = build_graph()
-        state = build_state(files, query)
+        ids = [f"{category}_{site}_{i}" for i in df_subset["page_id"]]
+        state = build_state(files, query, ids=ids)
 
         state = graph.invoke(state, config={"configurable": {"thread_id": "1"}})
         result_df = rank_xpath_node(state, category, site)
@@ -39,26 +43,62 @@ def program_xpath(candidates: Dict = None):
 
 
 def run_xpath(file_path: str, xpaths: List[Dict]):
-    html = open(file_path, "r").read()
-    tree = parse_html(html)
+    raw_html = open(file_path, "r").read()
+    tree = parse_html(raw_html)
 
     data = defaultdict(list)
     for obj in xpaths:
         try:
-            results = tree.xpath(
+            # replace all single quotes with double quotes
+            obj["xpath"] = obj["xpath"].replace("'", '"')
+            # replace \" with '
+            obj["xpath"] = obj["xpath"].replace('\\"', "'")
+
+            results = []
+            for ele in tree.xpath(
                 obj["xpath"], namespaces={"re": "http://exslt.org/regular-expressions"}
-            )
+            ):
+                if not ele:
+                    continue
+                if isinstance(ele, str):
+                    results.append(ele)
+                else:
+                    results.append(convert_html_to_text(to_string(ele)))
+
         except Exception:
             print(f"Not valid xpath: {obj['xpath']}")
             results = []
 
         if len(results) == 0:
             continue
+        results = [html.unescape(x) for x in results]
         results = [x.strip() for x in results if x.strip()]
-        results = [x.replace("  ", " ") for x in results]
+        results = [re.sub(r"\s+", " ", x) for x in results]
         data[obj["field_name"]] += results
 
     return dict(data)
+
+
+def unescape_and_strip(text):
+    return html.unescape(text).strip()
+
+
+def eval_array(predict: List[str], ground_truth: List[str]):
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+
+    for value in predict:
+        if value in ground_truth:
+            true_positives += 1
+        else:
+            false_positives += 1
+
+    for value in ground_truth:
+        if value not in predict:
+            false_negatives += 1
+
+    return true_positives, false_positives, false_negatives
 
 
 def eval_objects(predict, ground_truth):
@@ -66,18 +106,14 @@ def eval_objects(predict, ground_truth):
     false_positives = 0
     false_negatives = 0
 
-    predicted_values = set([x for v in predict.values() for x in v])
-    ground_truth_values = set([x for v in ground_truth.values() for x in v])
-
-    for value in predicted_values:
-        if value in ground_truth_values:
-            true_positives += 1
-        else:
-            false_positives += 1
-
-    for value in ground_truth_values:
-        if value not in predicted_values:
-            false_negatives += 1
+    for field_name, predict_values in predict.items():
+        ground_truth_values = ground_truth.get(field_name, [])
+        predict_values = [unescape_and_strip(x) for x in predict_values]
+        ground_truth_values = [unescape_and_strip(x) for x in ground_truth_values]
+        tp, fp, fn = eval_array(predict_values, ground_truth_values)
+        true_positives += tp
+        false_positives += fp
+        false_negatives += fn
 
     return true_positives, false_positives, false_negatives
 
@@ -116,29 +152,36 @@ def eval(xpath_df: pd.DataFrame, candidates=None):
             false_positives += fp
             false_negatives += fn
 
+        accuracy = true_positives / (
+            true_positives + false_positives + false_negatives + 1e-6
+        )
         precision = true_positives / (true_positives + false_positives + 1e-6)
         recall = true_positives / (true_positives + false_negatives + 1e-6)
         f1 = 2 * precision * recall / (precision + recall + 1e-6)
-        eval_metrics.append((category, site, precision, recall, f1))
+        eval_metrics.append((category, site, accuracy, precision, recall, f1))
 
         overall_tp += true_positives
         overall_fp += false_positives
         overall_fn += false_negatives
 
+    accuracy = overall_tp / (overall_tp + overall_fp + overall_fn + 1e-6)
     precision = overall_tp / (overall_tp + overall_fp + 1e-6)
     recall = overall_tp / (overall_tp + overall_fn + 1e-6)
     f1 = 2 * precision * recall / (precision + recall + 1e-6)
-    eval_metrics.append(("overall", "overall", precision, recall, f1))
+    eval_metrics.append(("overall", "overall", accuracy, precision, recall, f1))
 
     eval_df = pd.DataFrame(
-        eval_metrics, columns=["category", "site", "precision", "recall", "f1"]
+        eval_metrics,
+        columns=["category", "site", "accuracy", "precision", "recall", "f1"],
     )
     return eval_df
 
 
 if __name__ == "__main__":
-    candidates = [("camera", "pcnation")]
-    df = program_xpath(candidates)
+    # candidates = [("university", "ecampustours")]
+    xpath_df = program_xpath()
+    xpath_df.to_csv("data/swde_xpath_program.csv", index=False)
     # df = pd.read_csv("ranked_xpaths.csv")
-    df = eval(df, candidates)
+    eval_df = eval(xpath_df)
+    eval_df.to_csv("data/swde_xpath_program_eval.csv", index=False)
     pass
