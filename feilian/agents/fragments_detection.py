@@ -2,7 +2,6 @@ import re
 import tiktoken
 import json
 import os
-import json_repair
 from typing_extensions import TypedDict
 from typing import List, Optional, Annotated, Dict
 from enum import Enum
@@ -13,6 +12,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from copy import deepcopy
 from markdownify import MarkdownConverter
+from feilian.chains.information_extraction_chain import information_extraction_chain
 
 from feilian.etree_tools import (
     parse_html,
@@ -53,6 +53,7 @@ class Snippet(TypedDict):
     id: str
     raw_html: str
     ops: Annotated[List[Operator], merge_operators]
+    extracted: Optional[Dict]
 
 
 class FragmentDetectionState(Snippet):
@@ -139,14 +140,12 @@ extraction_chain = _create_extraction_chain()
 def detect_fragment_node(state: FragmentDetectionState) -> FragmentDetectionState:
     operator = state["ops"][0]
     if operator["text"] and operator["text"].strip():
-        response = extraction_chain.invoke(
+        data = information_extraction_chain.invoke(
             {
                 "context": operator["text"],
                 "query": state["query"],
             }
         )
-        data = json_repair.loads(response.content)
-        data = {k: v for k, v in data.items() if k != "_thought" and v}
         print(
             f"[Detection:{state['id']}] xpath: {operator['xpath']}, extracted: {data}"
         )
@@ -168,13 +167,9 @@ def _create_best_answer_chain():
 
 def _create_best_composition_chain():
     def parser(response):
-        choices = response.content.split("最终结论:")[1].strip()
+        choices = response.content.split("最终结论:")[-1].strip()
         choices = choices.split("\n")[0]
-        try:
-            choices = [int(x.strip()) for x in choices.split(",")]
-        except Exception:
-            # using regex to extract all numbers
-            choices = [int(x) for x in re.findall(r"\d+", choices)]
+        choices = [int(x) for x in re.findall(r"\d+", choices)]
 
         return choices
 
@@ -254,7 +249,7 @@ def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionS
         del op["data"]
         output_ops.append(op)
 
-    return {"ops": output_ops}
+    return {"ops": output_ops, "extracted": data}
 
 
 def fanout_to_fragment_detection(

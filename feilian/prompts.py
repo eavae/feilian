@@ -120,7 +120,7 @@ XPATH_PROGRAM_PROMPT_CN = ChatPromptTemplate.from_messages(
 
 
 COT_PROGRAM_XPATH_PROMPT_CN = (
-    "根据问题，编写用于提取各个字段的 XPath。"
+    "根据问题，编写用于提取各个字段文本内容的 XPath。"
     "当有多个 html 片段时，你需要针对某个字段编写**一条xpath**以适应所有具有相似结构的 html 片段。\n"
     "\n"
     "XPATH最佳实践:\n"

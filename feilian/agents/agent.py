@@ -1,7 +1,6 @@
 import os
 import hashlib
 import json
-import json_repair
 import pandas as pd
 import warnings
 from typing import List, Annotated
@@ -9,26 +8,21 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
 from minify_html import minify
 from html5lib.constants import DataLossWarning
 
-from feilian.etree_tools import (
-    clean_html,
-    to_string,
-    parse_html,
-)
+from feilian.etree_tools import clean_html, to_string, parse_html, extract_text_by_xpath
 from feilian.agents.fragments_detection import Snippet, tokenizer, run_operators
 from feilian.agents.reducers import replace_with_id, append
-from feilian.prompts import (
-    XPATH_PROGRAM_PROMPT_HISTORY_CN,
-    XPATH_PROGRAM_PROMPT_CN,
-    QUESTION_CONVERSION_COMP_CN,
-    COT_PROGRAM_XPATH_PROMPT_CN,
-)
+from feilian.prompts import QUESTION_CONVERSION_COMP_CN
 from feilian.agents.fragments_detection import fragment_detection_graph
+from feilian.chains.program_xpath_chain import cot_program_xpath_s1
 
 warnings.filterwarnings(action="ignore", category=DataLossWarning, module=r"html5lib")
+
+PROGRAM_XPATH_FRAGMENTS = 1
+
+fix_chain_state = []
 
 
 class Task(TypedDict):
@@ -73,51 +67,10 @@ def fragments_detection_node(state: State) -> State:
                 "id": snippet["id"],
                 "raw_html": snippet["raw_html"],
                 "ops": new_state["ops"],
+                "extracted": new_state["extracted"],
             }
         ],
     }
-
-
-def _create_program_xpath_chain():
-    def parser(response):
-        return json_repair.repair_json(
-            response.content,
-            return_objects=True,
-        )
-
-    llm = ChatOpenAI(
-        model="deepseek-coder",
-        temperature=0,
-        model_kwargs={
-            "response_format": {
-                "type": "json_object",
-            },
-        },
-    )
-    return (
-        XPATH_PROGRAM_PROMPT_CN.partial(chat_history=XPATH_PROGRAM_PROMPT_HISTORY_CN)
-        | llm
-        | parser
-    )
-
-
-program_xpath = _create_program_xpath_chain()
-
-
-def _create_cot_program_xpath_chain():
-    def parser(response):
-        json_str = response.content.split("最终结论:")[-1].strip()
-        json_str = json_str.split("```")[0].strip()
-        return json_repair.repair_json(json_str, return_objects=True)
-
-    llm = ChatOpenAI(
-        model=os.getenv("OPENAI_MODEL"),
-        temperature=0,
-    )
-    return PromptTemplate.from_template(COT_PROGRAM_XPATH_PROMPT_CN) | llm | parser
-
-
-cot_program_xpath = _create_cot_program_xpath_chain()
 
 
 def program_xpath_node(state: State):
@@ -138,28 +91,23 @@ def program_xpath_node(state: State):
 
         htmls.append(minified_html)
 
-    while True:
-        try:
-            data = cot_program_xpath.invoke(
-                dict(
-                    query=query,
-                    html0=htmls[0],
-                    html1=htmls[1],
-                    html2=htmls[2],
-                )
+    data = (
+        cot_program_xpath_s1.invoke(
+            dict(
+                query=query,
+                htmls=htmls,
+                datas=[x["extracted"] for x in state["snippets"]],
             )
-            if data:
-                break
-        except Exception as e:
-            print(f"Error: {e}")
-            continue
+        )
+        or {}
+    )
 
     tasks = []
     for field_name, xpath in data.items():
         if field_name == "_thought":
             continue
 
-        if isinstance(xpath, list):
+        if isinstance(xpath, list) and xpath:
             xpath = xpath[0]
 
         if not xpath:
@@ -173,20 +121,22 @@ def program_xpath_node(state: State):
 
         tasks.append(dict(field_name=field_name, xpath=xpath))
 
+    fix_chain_state.append(
+        {
+            "id": state["snippets"][0]["id"],
+            "ops": state["snippets"][0]["ops"],
+            "data": state["snippets"][0]["extracted"],
+            "tasks": tasks,
+        }
+    )
     print(
         f"[Program XPath] {tokens_before} ==> {tokens_after} [{json.dumps(data, ensure_ascii=False)}]"
     )
     return dict(tasks=tasks)
 
 
-def robust_xpath(tree, xpath):
-    try:
-        return tree.xpath(
-            xpath, namespaces={"re": "http://exslt.org/regular-expressions"}
-        )
-    except Exception as e:
-        print(f"Error: {e}")
-        return []
+def merge_node(state: State):
+    return state
 
 
 def rank_xpath_node(state, category: str, site: str):
@@ -200,7 +150,7 @@ def rank_xpath_node(state, category: str, site: str):
     for snippet in state["snippets"]:
         tree = parse_html(snippet["raw_html"])
         df["n_extracted"] += df["xpath"].apply(
-            lambda x: (1 if len(robust_xpath(tree, x)) else 0)
+            lambda x: (1 if len(extract_text_by_xpath(tree, x)) else 0)
         )
 
     # take the first xpath
@@ -233,6 +183,38 @@ def fanout_to_fragments_detection(state: State):
     ]
 
 
+def fanout_to_program_xpath(state: State):
+    if PROGRAM_XPATH_FRAGMENTS == 1:
+        compositions = [
+            (0,),
+            (1,),
+            (2,),
+        ]
+    elif PROGRAM_XPATH_FRAGMENTS == 2:
+        compositions = [
+            (0, 1),
+            (1, 2),
+            (0, 2),
+        ]
+    elif PROGRAM_XPATH_FRAGMENTS == 3:
+        compositions = [
+            (0, 1, 2),
+        ]
+
+    return [
+        Send(
+            "program_xpath",
+            {
+                "snippets": [state["snippets"][i] for i in composition],
+                "tasks": state["tasks"],
+                "query": state["query"],
+                "xpath_query": state["xpath_query"],
+            },
+        )
+        for composition in compositions
+    ]
+
+
 def build_graph(memory=None):
     builder = StateGraph(State)
 
@@ -240,11 +222,13 @@ def build_graph(memory=None):
     builder.add_node("query_conversion", query_conversion_node)
     builder.add_node("fragments_detection", fragments_detection_node)
     builder.add_node("program_xpath", program_xpath_node)
+    builder.add_node("merge_node", merge_node)
 
     # add edges
     builder.add_edge(START, "query_conversion")
     builder.add_conditional_edges("query_conversion", fanout_to_fragments_detection)
-    builder.add_edge("fragments_detection", "program_xpath")
+    builder.add_edge("fragments_detection", "merge_node")
+    builder.add_conditional_edges("merge_node", fanout_to_program_xpath)
     builder.add_edge("program_xpath", END)
 
     return builder.compile(checkpointer=memory)

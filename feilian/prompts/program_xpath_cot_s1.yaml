@@ -1,0 +1,37 @@
+input_variables:
+  - html
+  - data
+output_parser: null
+template: |
+  根据HTML片段中给定的待提取内容，编写用于提取各个字段的XPath。逐字段编写较鲁棒的**xpath**，使之能够适应所有具有相似结构的HTML片段。
+
+  XPATH最佳实践:
+  1. 基于强属性（比如：id、class、name等）和标签自身的语义选择合适的**锚点**，比如：`//div[@id="example"]/text()`。
+  2. 选择恰当的函数进行辅助。比如contains()、starts-with()、text()、re:test()等，比如：`//*[re:test(., "^abc$", "i")]/text()"`。
+  3. 基于**锚点**，使用轴（axes）细致的游走到目标节点（无法直接通过1或2找到目标节点时），比如：`/button[@id='goodID']/parent::*/following-sibling::*[1]/button`。
+  4. `text()`函数只能用于匹配**当前节点**（不包含子节点！）的文本，禁止使用长文本匹配。建议选择合理的关键词，配合`contains`或`re:test`进行查找。
+  5. `contains`优于`=`，比如`//div[contains(@class, "title")]`优于`//div[@class="title"]`。
+  6. `contains`的一个参数必须是某属性或函数，禁止类似`//div[contains(., "Some Text")]`的写法，推荐`//div[contains(text(), "Some Text")]`。
+  7. 合理使用`tokenize`, `starts-with`, `matches`, `substring`, `substring-before`, `substring-after`等函数应对需要复杂文本提取的情况。
+
+  回答时，遵循如下格式：
+  ```text
+  思考[字段A]: ...(观察HTML，记录现象，思考如何编写XPath用以提取字段A，并记录过程)...
+  ...(当有多个字段时，思考下一个字段)...
+  思考[字段B]: ...(同上)...
+  ...(重复上述步骤，直到思考完所有字段)...
+  最终结论: ...(使用 JSON 格式回答，比如：{{"字段A":"//div[contains(@class, "exampleA")]/text()","字段B":"//div[contains(@class, "exampleB")]"}})...
+  ```
+
+  HTML片段：
+  ```html
+  {html}
+  ```
+  待提取：
+  ```json
+  {data}
+  ```
+
+  逐字段思考并得出最终结论，记录如下:
+
+template_format: f-string

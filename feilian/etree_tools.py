@@ -1,5 +1,6 @@
 import re
 import html5lib
+import html
 from lxml import etree
 from tokenizers import Tokenizer
 from copy import deepcopy
@@ -8,6 +9,8 @@ from typing import List, Optional
 from collections import defaultdict
 
 from feilian.html_constants import INTERACTIVE_ELEMENTS
+
+from feilian.text_tools import convert_html_to_text
 
 
 # A regex matching the "invalid XML character range"
@@ -29,7 +32,7 @@ def strip_illegal_xml_characters(s, default, base=10):
     return default
 
 
-def remove_control_characters(html: str):
+def remove_control_characters(html_str: str):
     """
     Strip invalid XML characters that `lxml` cannot parse.
     """
@@ -48,24 +51,24 @@ def remove_control_characters(html: str):
 
     # We encode all non-ascii characters to XML char-refs, so for example "💖" becomes: "&#x1F496;"
     # Otherwise we'd remove emojis by mistake on narrow-unicode builds of Python
-    html = html.encode("ascii", "xmlcharrefreplace").decode("utf-8")
-    html = re.sub(
+    html_str = html_str.encode("ascii", "xmlcharrefreplace").decode("utf-8")
+    html_str = re.sub(
         r"&#(\d+);?",
         lambda c: strip_illegal_xml_characters(c.group(1), c.group(0)),
-        html,
+        html_str,
     )
-    html = re.sub(
+    html_str = re.sub(
         r"&#[xX]([0-9a-fA-F]+);?",
         lambda c: strip_illegal_xml_characters(c.group(1), c.group(0), base=16),
-        html,
+        html_str,
     )
-    html = ILLEGAL_XML_CHARS_RE.sub("", html)
-    return html
+    html_str = ILLEGAL_XML_CHARS_RE.sub("", html_str)
+    return html_str
 
 
-def parse_html(html: str):
-    html = remove_control_characters(html)
-    return html5lib.parse(html, treebuilder="lxml", namespaceHTMLElements=False)
+def parse_html(html_str: str):
+    html_str = remove_control_characters(html_str)
+    return html5lib.parse(html_str, treebuilder="lxml", namespaceHTMLElements=False)
 
 
 def post_order_traversal(tree: etree._Element, func):
@@ -218,12 +221,12 @@ def remove_children(ele: etree._Element):
 
 
 def to_string(ele: etree._Element, pretty_print=False):
-    html = etree.tostring(ele, encoding="utf-8").decode("utf-8")
+    html_str = etree.tostring(ele, encoding="utf-8").decode("utf-8")
     if pretty_print:
         from bs4 import BeautifulSoup
 
-        return BeautifulSoup(html, "html.parser").prettify()
-    return html
+        return BeautifulSoup(html_str, "html.parser").prettify()
+    return html_str
 
 
 def prune_by_tokens(
@@ -400,3 +403,34 @@ def remove_by_xpath(tree: etree._Element, xpath: str):
         xpath, namespaces={"re": "http://exslt.org/regular-expressions"}
     ):
         ele.getparent().remove(ele)
+
+
+def extract_text_by_xpath(tree: etree._Element, xpath: str):
+    if not isinstance(xpath, str):
+        return []
+
+    # replace all single quotes with double quotes
+    xpath = xpath.replace("'", '"')
+    # replace \" with '
+    xpath = xpath.replace('\\"', "'")
+
+    results = []
+    try:
+        for ele in tree.xpath(
+            xpath, namespaces={"re": "http://exslt.org/regular-expressions"}
+        ):
+            if ele is None:
+                continue
+            if isinstance(ele, str):
+                results.append(ele)
+            else:
+                results.append(convert_html_to_text(to_string(ele)))
+    except Exception:
+        print(f"Invalid xpath: {xpath}")
+        results = []
+
+    results: List[str] = [html.unescape(x) for x in results]
+    results = [x.strip() for x in results if x.strip()]
+    results = [re.sub(r"\s+", " ", x) for x in results]
+
+    return results

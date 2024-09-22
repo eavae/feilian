@@ -25,9 +25,9 @@ INTERACTIVE_ELEMENTS = {
     "option",
     "optgroup",
     # ui elements
-    "br",
-    "hr",
-    "wbr",
+    # "br",
+    # "hr",
+    # "wbr",
     # table elements
     "col",
     "colgroup",
