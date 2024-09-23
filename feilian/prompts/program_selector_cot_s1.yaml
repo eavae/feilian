@@ -1,0 +1,33 @@
+input_variables:
+  - html
+  - data
+output_parser: null
+template: |
+  你是名专业的网页前端工程师，你想要根据提供的HTML片段和指定要提取的内容，编写用于提取各个字段的 css selector，使之能够适应所有具有相似结构的HTML片段。
+
+  CSS Selector 最佳实践:
+  1. 基于强属性（比如：id、class、name等）和标签自身的语义选择合适的**锚点**，比如：`div#example`。
+  2. 基于**锚点**，使用`> + ~ :first-child :last-child :nth-child()`等游走到目标节点。
+  3. 可使用`:contains`，但其只能作用于文本节点（不作用于子节点）。
+
+  回答时，遵循如下格式：
+  ```text
+  思考[字段A]: ...(观察HTML，记录现象，思考如何编写 css selector 用以提取字段A，并记录过程)...
+  ...(当有多个字段时，思考下一个字段)...
+  思考[字段B]: ...(同上)...
+  ...(重复上述步骤，直到思考完所有字段)...
+  最终结论: ...(使用 JSON 格式回答，比如：{{"字段A":".example-class","字段B":"#example-id"}})...
+  ```
+
+  HTML片段：
+  ```html
+  {html}
+  ```
+  待提取：
+  ```json
+  {data}
+  ```
+
+  请逐字段思考并得出最终结论，你的回答:
+
+template_format: f-string

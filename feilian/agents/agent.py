@@ -11,16 +11,30 @@ from langchain_openai import ChatOpenAI
 from minify_html import minify
 from html5lib.constants import DataLossWarning
 
-from feilian.etree_tools import clean_html, to_string, parse_html, extract_text_by_xpath
+from feilian.etree_tools import (
+    clean_html,
+    to_string,
+    parse_html,
+    extract_text_by_xpath,
+    extract_text_by_css_selector,
+)
 from feilian.agents.fragments_detection import Snippet, tokenizer, run_operators
 from feilian.agents.reducers import replace_with_id, append
 from feilian.prompts import QUESTION_CONVERSION_COMP_CN
 from feilian.agents.fragments_detection import fragment_detection_graph
-from feilian.chains.program_xpath_chain import cot_program_xpath_s1
+from feilian.chains.program_xpath_chain import (
+    cot_program_xpath_s1,
+    cot_program_xpath_s2,
+)
+from feilian.chains.program_css_selector_chain import (
+    cot_program_css_selector_s1,
+    cot_program_css_selector_s2,
+)
 
 warnings.filterwarnings(action="ignore", category=DataLossWarning, module=r"html5lib")
 
-PROGRAM_XPATH_FRAGMENTS = 1
+PROGRAM_FRAGMENTS = 2
+PROGRAM_TYPE = "xpath"
 
 fix_chain_state = []
 
@@ -73,7 +87,7 @@ def fragments_detection_node(state: State) -> State:
     }
 
 
-def program_xpath_node(state: State):
+def program_node(state: State):
     query = state["xpath_query"]
 
     tokens_before = 0
@@ -91,8 +105,16 @@ def program_xpath_node(state: State):
 
         htmls.append(minified_html)
 
+    if PROGRAM_TYPE == "xpath" and PROGRAM_FRAGMENTS == 1:
+        chain = cot_program_xpath_s1
+    elif PROGRAM_TYPE == "css_selector" and PROGRAM_FRAGMENTS == 1:
+        chain = cot_program_css_selector_s1
+    elif PROGRAM_TYPE == "css_selector" and PROGRAM_FRAGMENTS == 2:
+        chain = cot_program_css_selector_s2
+    elif PROGRAM_TYPE == "xpath" and PROGRAM_FRAGMENTS == 2:
+        chain = cot_program_xpath_s2
     data = (
-        cot_program_xpath_s1.invoke(
+        chain.invoke(
             dict(
                 query=query,
                 htmls=htmls,
@@ -116,8 +138,10 @@ def program_xpath_node(state: State):
         if isinstance(xpath, list):
             xpath = xpath[0]
 
-        if isinstance(xpath, dict):
+        if isinstance(xpath, dict) and PROGRAM_TYPE == "xpath":
             xpath = " | ".join(set(xpath.values()))
+        if isinstance(xpath, dict) and PROGRAM_TYPE == "css_selector":
+            xpath = ", ".join(set(xpath.values()))
 
         tasks.append(dict(field_name=field_name, xpath=xpath))
 
@@ -139,6 +163,48 @@ def merge_node(state: State):
     return state
 
 
+def unescape_and_strip(text):
+    import html
+
+    return html.unescape(text).strip()
+
+
+def eval_array(predict: List[str], ground_truth: List[str]):
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+
+    for value in predict:
+        if value in ground_truth:
+            true_positives += 1
+        else:
+            false_positives += 1
+
+    for value in ground_truth:
+        if value not in predict:
+            false_negatives += 1
+
+    return true_positives, false_positives, false_negatives
+
+
+def eval_objects(predict, ground_truth):
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+
+    for field_name in set(predict.keys()) | set(ground_truth.keys()):
+        ground_truth_values = ground_truth.get(field_name, [])
+        predict_values = predict.get(field_name, [])
+        predict_values = [unescape_and_strip(x) for x in predict_values]
+        ground_truth_values = [unescape_and_strip(x) for x in ground_truth_values]
+        tp, fp, fn = eval_array(predict_values, ground_truth_values)
+        true_positives += tp
+        false_positives += fp
+        false_negatives += fn
+
+    return true_positives, false_positives, false_negatives
+
+
 def rank_xpath_node(state, category: str, site: str):
     """group by field name, then rank by the number of extracted data"""
 
@@ -147,15 +213,38 @@ def rank_xpath_node(state, category: str, site: str):
     df = df.drop_duplicates(subset=["field_name", "xpath"])
 
     df["n_extracted"] = 0
-    for snippet in state["snippets"]:
-        tree = parse_html(snippet["raw_html"])
-        df["n_extracted"] += df["xpath"].apply(
-            lambda x: (1 if len(extract_text_by_xpath(tree, x)) else 0)
+    extract_fn = (
+        extract_text_by_xpath
+        if PROGRAM_TYPE == "xpath"
+        else extract_text_by_css_selector
+    )
+    df["f1_score"] = 0
+    for i, row in df.iterrows():
+        true_positives = 0
+        false_positives = 0
+        false_negatives = 0
+
+        field_name = row["field_name"]
+        xpath = row["xpath"]
+        for snippet in state["snippets"]:
+            extracted = extract_fn(parse_html(snippet["raw_html"]), xpath)
+            ground_truth = snippet["extracted"].get(field_name, [])
+            tp, fp, fn = eval_array(extracted, ground_truth)
+            true_positives += tp
+            false_positives += fp
+            false_negatives += fn
+
+        precision = true_positives / (true_positives + false_positives + 1e-6)
+        recall = true_positives / (true_positives + false_negatives + 1e-6)
+        f1_score = (
+            2 * (precision * recall) / (precision + recall) if precision + recall else 0
         )
+        df.loc[i, "n_extracted"] += len(extracted)
+        df.loc[i, "f1_score"] += f1_score
 
     # take the first xpath
     left_df = (
-        df.sort_values(["field_name", "n_extracted"], ascending=False)
+        df.sort_values(["field_name", "f1_score", "n_extracted"], ascending=False)
         .groupby("field_name")
         .first()
     )
@@ -184,19 +273,19 @@ def fanout_to_fragments_detection(state: State):
 
 
 def fanout_to_program_xpath(state: State):
-    if PROGRAM_XPATH_FRAGMENTS == 1:
+    if PROGRAM_FRAGMENTS == 1:
         compositions = [
             (0,),
             (1,),
             (2,),
         ]
-    elif PROGRAM_XPATH_FRAGMENTS == 2:
+    elif PROGRAM_FRAGMENTS == 2:
         compositions = [
             (0, 1),
             (1, 2),
             (0, 2),
         ]
-    elif PROGRAM_XPATH_FRAGMENTS == 3:
+    elif PROGRAM_FRAGMENTS == 3:
         compositions = [
             (0, 1, 2),
         ]
@@ -221,7 +310,7 @@ def build_graph(memory=None):
     # add nodes
     builder.add_node("query_conversion", query_conversion_node)
     builder.add_node("fragments_detection", fragments_detection_node)
-    builder.add_node("program_xpath", program_xpath_node)
+    builder.add_node("program_xpath", program_node)
     builder.add_node("merge_node", merge_node)
 
     # add edges

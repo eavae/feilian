@@ -41,6 +41,14 @@ class OperatorTypes(Enum):
     PRUNE = "prune"
     EXTRACT = "extract"
 
+    @staticmethod
+    def from_str(value: str):
+        if value == "prune":
+            return OperatorTypes.PRUNE
+        if value == "extract":
+            return OperatorTypes.EXTRACT
+        raise ValueError(f"Unknown operator type: {value}")
+
 
 class Operator(TypedDict):
     xpath: str
@@ -210,6 +218,7 @@ def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionS
         clean_html(tree)
         run_operators(tree, prune_ops)
         context = converter.convert(to_string(tree))
+        context = re.sub(r"\n{3,}", "\n\n", context)
 
         choice_str = format_to_ordered_list(choices)
         best_choices = best_composition_chain.invoke(

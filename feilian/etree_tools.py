@@ -7,6 +7,7 @@ from copy import deepcopy
 from urllib.parse import unquote
 from typing import List, Optional
 from collections import defaultdict
+from lxml.cssselect import CSSSelector
 
 from feilian.html_constants import INTERACTIVE_ELEMENTS
 
@@ -432,5 +433,22 @@ def extract_text_by_xpath(tree: etree._Element, xpath: str):
     results: List[str] = [html.unescape(x) for x in results]
     results = [x.strip() for x in results if x.strip()]
     results = [re.sub(r"\s+", " ", x) for x in results]
+
+    return results
+
+
+def extract_text_by_css_selector(tree: etree._Element, css_selector: str):
+    try:
+        selector = CSSSelector(css_selector)
+    except Exception:
+        print(f"Invalid css selector: {css_selector}")
+        return []
+    elements = selector(tree)
+
+    results: List[str] = [
+        html.unescape(convert_html_to_text(to_string(ele))) for ele in elements
+    ]
+    results = [x.strip() for x in results if x.strip()]
+    results = [re.sub(r"  +", " ", x) for x in results]
 
     return results

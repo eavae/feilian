@@ -1,0 +1,59 @@
+input_variables:
+  - context
+  - xpath
+  - ground_truth1
+  - prediction1
+  - ground_truth2
+  - prediction2
+  - ground_truth3
+  - prediction3
+template: |
+  你是专业的前端工程师和测试工程师，你需要结合给定上下文，根据该XPath在不同HTML中的执行结果，判断该XPath的正确性及**泛用性**。该 XPath 用于信息提取，提取时需要依赖 HTML 的结构语义，而非特定实体，以保证泛用性。若不正确或难以泛用，提出修改建议。泛用性指的是该XPath是否能够在不同内容但结构相同的HTML中准确地定位到目标节点。
+
+  XPATH最佳实践:
+  1. 基于强属性（比如：id、class、name等）和标签自身的语义选择合适的**锚点**，比如：`//div[@id="example"]/text()`。
+  2. 选择恰当的函数进行辅助。比如contains()、starts-with()、text()、re:test()等，比如：`//*[re:test(., "^abc$", "i")]/text()"`。
+  3. 基于**锚点**，使用轴（axes）细致的游走到目标节点（无法直接通过1或2找到目标节点时），比如：`/button[@id='goodID']/parent::*/following-sibling::*[1]/button`。
+  4. `text()`函数只能用于匹配**当前节点**（不包含子节点！）的文本，禁止使用长文本匹配。建议选择合理的关键词，配合`contains`或`re:test`进行查找。
+  5. `contains`优于`=`，比如`//div[contains(@class, "title")]`优于`//div[@class="title"]`。
+  6. `contains`的一个参数必须是某属性或函数，禁止类似`//div[contains(., "Some Text")]`的写法，推荐`//div[contains(text(), "Some Text")]`。
+  7. 合理使用`tokenize`, `starts-with`, `matches`, `substring`, `substring-before`, `substring-after`等函数应对需要复杂文本提取的情况。
+
+  上下文（抽样）：
+  ```html
+  {context}
+  ```
+
+  回答时，遵循如下格式：
+  ```text
+  思考：...(思考过程，结合给定的上下文中的HTML片段，提出你的想法，包括但不限于：是否正确、是否泛用、是否需要修改、是否符合最佳实践等)...
+  是否需要修改: ...(是否需要修改，是/否)...
+  修改建议: ...(若是时，提出修剪建议)...
+  ```
+
+  XPath：{xpath}
+
+  HTML1：
+  Expected: {ground_truth1}
+  Execution Output：
+  ```html
+  {prediction1}
+  ```
+
+  HTML2：
+  Expected: {ground_truth2}
+  Execution Output：
+  ```html
+  {prediction2}
+  ```
+
+  HTML3：
+  Expected: {ground_truth3}
+  Execution Output：
+  ```html
+  {prediction3}
+  ```
+
+  Your Answer:
+
+template_format: f-string
