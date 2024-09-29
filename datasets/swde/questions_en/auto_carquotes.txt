@@ -1,4 +1,4 @@
-What are the specifications and pricing details of the vehicle described in the overview, formatted as a JSON object?
+What are the specifications of the vehicle described in the context, including engine type, fuel economy, model names, and the price, formatted as a JSON object?
 
 ```json
 {

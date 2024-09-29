@@ -1,8 +1,8 @@
-What are the specifications of the vehicle including engine types, fuel economy, model year, and price range, formatted as JSON?
+What are the specifications of the vehicle described in the context, including engine type, fuel economy, model names, and the price, formatted as a JSON object?
 
 ```json
 {
-  "engine": ["...", "...", "..."],
+  "engine": ["..."],
   "fuel_economy": ["..."],
   "model": ["..."],
   "price": ["..."]

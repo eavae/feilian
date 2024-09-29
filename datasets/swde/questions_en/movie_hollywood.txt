@@ -5,6 +5,6 @@ Based on the context provided, please provide the details of the director, genre
   "director": ["..."],
   "genre": ["..."],
   "mpaa_rating": ["..."],
-  "title": ["...", "..."]
+  "title": ["..."]
 }
 ```

@@ -1,4 +1,4 @@
-What is the JSON representation of the product details including manufacturer, model, and price based on the provided context?
+What is the JSON representation of the product details including manufacturer, model (product name), and price based on the provided context?
 
 ```json
 {

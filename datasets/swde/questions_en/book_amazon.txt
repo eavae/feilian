@@ -1,11 +1,11 @@
-What is the JSON representation of the book "Collapse: How Societies Choose to Fail or Succeed" based on the provided context?
+What are the specifications of the book described in the context, including author, isbn number, publisher, publication date and title, formatted as a JSON object?
 
 ```json
 {
-  "author": ["Jared Diamond"],
-  "isbn_13": ["978-0670033379"],
-  "publication_date": ["Viking Adult; 1 edition (December 29, 2004)"],
-  "publisher": ["Viking Adult; 1 edition (December 29, 2004)"],
-  "title": ["Collapse: How Societies Choose to Fail or Succeed"]
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
 }
 ```

@@ -1,10 +1,10 @@
-What is the height, weight, and team of Juwan Howard, and what position does he play in basketball? Please provide the answer in JSON format.
+What is the height, weight, team name, and what position does he play in basketball? Please provide the answer in JSON format.
 
 ```json
 {
-  "height": ["6&#160;ft&#160;9&#160;in (2.06 m)"],
-  "weight": ["253&#160;lb (115 kg)"],
-  "team": ["Miami Heat"],
-  "position": ["Power forward"]
+  "height": ["..."],
+  "weight": ["..."],
+  "team": ["..."],
+  "position": ["..."]
 }
 ```

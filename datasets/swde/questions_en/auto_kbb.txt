@@ -1,4 +1,4 @@
-What is the JSON representation of the vehicle specifications, including engine type, fuel economy, model details, and price, as listed on the webpage?
+What are the specifications of the vehicle described in the context, including engine type, fuel economy, model names, and the price, formatted as a JSON object?
 
 ```json
 {

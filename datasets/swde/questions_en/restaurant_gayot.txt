@@ -3,8 +3,8 @@ Please provide the details of the restaurant in JSON format, including its name,
 ```json
 {
   "name": ["..."],
-  "address": ["...", "...", "...", "..."],
+  "address": ["..."],
   "phone": ["..."],
-  "cuisine": ["...", "..."]
+  "cuisine": ["..."]
 }
 ```

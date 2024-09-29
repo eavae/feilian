@@ -2,9 +2,9 @@ What is the height, name, team, and weight of the player in the following JSON f
 
 ```json
 {
-  "height": ["6' 7\""],
-  "name": ["Thabo Sefolosha"],
-  "team": ["Oklahoma City Thunder"],
-  "weight": ["215"]
+  "height": [""],
+  "name": [""],
+  "team": [""],
+  "weight": [""]
 }
 ```

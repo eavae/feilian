@@ -1,9 +1,9 @@
-Based on the provided context, please extract the relevant information about the product and format it into a JSON object. The JSON should include the manufacturer, model, and price of the product.
+Based on the provided context, please extract the relevant information about the product and format it into a JSON object. The JSON should include the manufacturer, model (aka title or product name), and price of the product.
 
 Here is the JSON format to follow:
 ```json
 {
-  "manufacturer": ["...", "..."],
+  "manufacturer": ["..."],
   "model": ["..."],
   "price": ["..."]
 }

@@ -1,10 +1,10 @@
-What are the key specifications and price of the vehicle described in the context, formatted as a JSON object?
+What are the specifications of the vehicle described in the context, including engine type, fuel economy, model names, and the price, formatted as a JSON object?
 
 ```json
 {
   "engine": ["..."],
-  "fuel_economy": ["/", "MPG City / MPG Hwy"],
-  "model": ["...", "..."],
-  "price": ["$ 44,950"]
+  "fuel_economy": ["..."],
+  "model": ["..."],
+  "price": ["..."]
 }
 ```

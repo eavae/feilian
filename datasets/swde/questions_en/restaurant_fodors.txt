@@ -2,9 +2,9 @@ What is the JSON representation of the restaurant's name, address, phone number,
 
 ```json
 {
-  "address": ["202 K Ave., Kure Beach, NC, 28449 |"],
-  "cuisine": ["Seafood"],
-  "name": ["Big Daddy's"],
-  "phone": ["910/458-8622"]
+  "address": ["..."],
+  "cuisine": ["..."],
+  "name": ["..."],
+  "phone": ["..."]
 }
 ```

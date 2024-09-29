@@ -2,9 +2,9 @@ What is the JSON representation of the player's height, name, team, and weight b
 
 ```json
 {
-  "height": ["&nbsp;6'10\""],
-  "name": ["Joe Smith"],
-  "team": ["Nets"],
-  "weight": ["&nbsp;225"]
+  "height": ["..."],
+  "name": ["..."],
+  "team": ["..."],
+  "weight": ["..."]
 }
 ```

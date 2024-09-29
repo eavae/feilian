@@ -2,9 +2,9 @@ What is the JSON representation of the restaurant's details as listed in the pro
 
 ```json
 {
-  "address": ["11849 Foothill Boulvard", "Rancho Cucamonga", "CA", "91730"],
-  "cuisine": ["European", "French"],
-  "name": ["Le Bellissimo French Italian Bistro"],
-  "phone": ["(909) 948-0948"]
+  "address": ["..."],
+  "cuisine": ["..."],
+  "name": ["..."],
+  "phone": ["..."]
 }
 ```

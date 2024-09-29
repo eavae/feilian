@@ -1,9 +1,9 @@
-What are the specifications and features of the vehicle in JSON format?
+What are the specifications of the vehicle described in the context, including engine type, fuel economy, model names, and the price, formatted as a JSON object?
 
 ```json
 {
   "engine": ["..."],
-  "fuel_economy": ["...", "..."],
+  "fuel_economy": ["..."],
   "model": ["..."],
   "price": ["...", "..."]
 }

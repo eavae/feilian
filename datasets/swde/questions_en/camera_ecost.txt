@@ -1,4 +1,4 @@
-Please provide the details of the product in JSON format, including the manufacturer, model, and price.
+Please provide the details of the product in JSON format, including the manufacturer, model (product name), and price.
 
 JSON:
 ```json

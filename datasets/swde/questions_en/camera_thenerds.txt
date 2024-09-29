@@ -1,4 +1,4 @@
-Based on the provided context, please provide the details of the digital camera in JSON format. The JSON should include the manufacturer names, model names, and price.
+Based on the provided context, please provide the details of the digital camera in JSON format. The JSON should include the manufacturer name(s), model name(s), and price.
 
 JSON:
 ```json

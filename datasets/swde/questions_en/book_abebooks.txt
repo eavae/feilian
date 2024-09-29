@@ -1,9 +1,9 @@
-What is the JSON representation of the book details for the first result in the search results container?
+What are the specifications of the book described in the context, including author, isbn number, publication date and title, formatted as a JSON object?
 
 ```json
 {
-  "author": ["...", "..."],
-  "isbn_13": ["...", "..."],
+  "author": ["..."],
+  "isbn_13": ["..."],
   "publication_date": ["..."],
   "title": ["..."]
 }
