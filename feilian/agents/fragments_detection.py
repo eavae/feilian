@@ -1,18 +1,18 @@
 import re
 import tiktoken
 import json
-import os
 from typing_extensions import TypedDict
 from typing import List, Optional, Annotated, Dict
 from enum import Enum
 from lxml import etree
 from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
 from copy import deepcopy
 from markdownify import MarkdownConverter
-from feilian.chains.information_extraction_chain import information_extraction_chain
+from feilian.chains.information_extraction_chain import (
+    information_extraction_chain,
+    best_composition_chain,
+)
 
 from feilian.etree_tools import (
     parse_html,
@@ -23,12 +23,6 @@ from feilian.etree_tools import (
 )
 from feilian.etree_token_stats import extract_fragments_by_weight
 from feilian.text_tools import convert_html_to_text
-from feilian.prompts import (
-    EXTRACTION_PROMPT_CN,
-    EXTRACTION_PROMPT_HISTORY,
-    BEST_ANSWERS_PROMPT_CN,
-    BEST_COMPOSITION_CN,
-)
 from feilian.agents.reducers import merge_operators
 from feilian.tools import format_to_ordered_list
 
@@ -129,22 +123,6 @@ def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionSt
     }
 
 
-def _create_extraction_chain():
-    llm = ChatOpenAI(
-        model=os.getenv("OPENAI_MODEL"),
-        temperature=0,
-        model_kwargs={
-            "response_format": {
-                "type": "json_object",
-            },
-        },
-    )
-    return EXTRACTION_PROMPT_CN.partial(chat_history=EXTRACTION_PROMPT_HISTORY) | llm
-
-
-extraction_chain = _create_extraction_chain()
-
-
 def detect_fragment_node(state: FragmentDetectionState) -> FragmentDetectionState:
     operator = state["ops"][0]
     if operator["text"] and operator["text"].strip():
@@ -161,33 +139,6 @@ def detect_fragment_node(state: FragmentDetectionState) -> FragmentDetectionStat
             "ops": [{"xpath": operator["xpath"], "data": data}],
         }
     return {"ops": [{"xpath": operator["xpath"], "data": {}}]}
-
-
-def _create_best_answer_chain():
-    def parser(response):
-        choices = response.content.strip()
-        choices = [int(x) for x in choices.split(",")]
-        return choices
-
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
-    return BEST_ANSWERS_PROMPT_CN | llm | parser
-
-
-def _create_best_composition_chain():
-    def parser(response):
-        choices = response.content.split("最终结论:")[-1].strip()
-        choices = choices.split("\n")[0]
-        choices = [int(x) for x in re.findall(r"\d+", choices)]
-
-        return choices
-
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
-    prompt = PromptTemplate.from_template(BEST_COMPOSITION_CN)
-    return prompt | llm | parser
-
-
-best_answer_chain = _create_best_answer_chain()
-best_composition_chain = _create_best_composition_chain()
 
 
 def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionState:

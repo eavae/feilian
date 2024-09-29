@@ -1,4 +1,5 @@
 import os
+import re
 import json_repair
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
@@ -25,4 +26,18 @@ def create_information_extraction_chain():
     )
 
 
+def _create_best_composition_chain():
+    def parser(response):
+        choices = response.content.split("最终结论:")[-1].strip()
+        choices = choices.split("\n")[0]
+        choices = [int(x) for x in re.findall(r"\d+", choices)]
+
+        return choices
+
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
+    prompt = PromptTemplate.from_file("feilian/prompts/best_composition.yaml")
+    return prompt | llm | parser
+
+
+best_composition_chain = _create_best_composition_chain()
 information_extraction_chain = create_information_extraction_chain()

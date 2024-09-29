@@ -1,3 +1,5 @@
+# 该文件已废弃
+
 import json
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -5,7 +7,6 @@ from langchain_core.prompts import (
     PromptTemplate,
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-
 
 QUESTION_CONSTRUCTION_CN = (
     "根据问题的答案和参考资料，构造问题。问题中禁止透露参考资料中的任何实体、年份、地域等信息，问题需要简单且明确，并指定回答的格式（JSON）。得到该问题的受试者能够仅凭问题和类似资料，回答出符合格式要求的答案。\n"
