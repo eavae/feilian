@@ -1,0 +1,25 @@
+input_variables:
+  - context
+  - query
+template: |
+  According to the question, extract the required information from the given context and present the result in JSON format. The given context may be incomplete or may not contain the answer, so inference needs to be made based on the question. The JSON in the final conclusion must not include fields that are not mentioned in the context.
+
+  When answering, follow the format below:
+  ```text
+  Fields: ...(narrate the fields mentioned in the text and their locations)...
+  Final Conclusion: ...(answer using JSON format, for example: {{"FieldA": ["ValueA"], "FieldB": ["ValueB1", "ValueB2"]}})...
+  ```
+
+  Context:
+  ```text
+  {context}
+  ```
+
+  Question:
+  ```text
+  {query}
+  ```
+
+  Your Answer:
+
+template_format: f-string

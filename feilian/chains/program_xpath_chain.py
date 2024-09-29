@@ -65,8 +65,14 @@ def _create_cot_program_xpath_s3_chain():
 
 
 def create_cot_program_xpath_s2():
+    lang = os.environ.get("PROMPT_LANG", "cn")
+
     def parser(response):
-        json_str = response.content.split("最终结论:")[-1].strip()
+        if lang == "cn":
+            json_str = response.content.split("最终结论:")[-1].strip()
+        else:
+            json_str = response.content.split("Final Conclusion:")[-1].strip()
+
         if json_str.startswith("```json"):
             json_str = json_str.split("```json")[1].strip()
         if json_str.startswith("```"):
@@ -74,10 +80,8 @@ def create_cot_program_xpath_s2():
         json_str = json_str.split("```")[0].strip()
         return json_repair.repair_json(json_str, return_objects=True)
 
-    llm = ChatOpenAI(
-        model=os.getenv("OPENAI_MODEL"),
-        temperature=0,
-    )
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
+    template_file = f"feilian/prompts/{lang}/program_xpath_cot_s2.yaml"
     return (
         {
             "html0": compose(itemgetter(0), itemgetter("htmls")),
@@ -85,7 +89,7 @@ def create_cot_program_xpath_s2():
             "data0": compose(itemgetter(0), itemgetter("datas")),
             "data1": compose(itemgetter(1), itemgetter("datas")),
         }
-        | PromptTemplate.from_file("feilian/prompts/program_xpath_cot_s2.yaml")
+        | PromptTemplate.from_file(template_file)
         | llm
         | parser
     )
@@ -110,7 +114,7 @@ def create_cot_program_xpath_s1():
             "html": compose(itemgetter(0), itemgetter("htmls")),
             "data": compose(itemgetter(0), itemgetter("datas")),
         }
-        | PromptTemplate.from_file("feilian/prompts/program_xpath_cot_s1.yaml")
+        | PromptTemplate.from_file("feilian/prompts/cn/program_xpath_cot_s1.yaml")
         | llm
         | parser
     )

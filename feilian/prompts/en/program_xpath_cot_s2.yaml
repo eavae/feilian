@@ -1,0 +1,94 @@
+input_variables:
+  - html0
+  - data0
+  - html1
+  - data1
+output_parser: null
+template: |
+  Based on the given content to be extracted from the HTML snippet, write XPath expressions to extract each field. Refer to two HTML snippets and write robust XPath expressions for each field, so as to adapt to all HTML with similar structures with no seen. The HTML snippets are cut out from actual web pages. When writing XPath, some global features (such as id, class, etc.) should be added to avoid selecting additional elements during actual execution.
+
+  ## XPATH Best Practices:
+  1. Based on strong attributes (such as: id, class, name, etc.) and the semantic meaning of the tag itself, choose an appropriate anchor point, for example: `//div[@id="example"]/text()`.
+  2. Based on the anchor point, use axes to navigate to the target node (when the target node cannot be directly found through the 1st best practice), for example: `/button[@id='goodID']/parent::*/following-sibling::*[1]/button`.
+  3. Use appropriate functions to trim strings to obtain the target text.
+
+  ## Learn More about XPath：
+
+  ### `text()` vs `.`
+  `text()` is used to extract the text content of only the current node, not including the text content of child nodes. `.` is used to extract all content of the current node, including the text content of child nodes. For example, for `<div><span>foo</span></div>`, `//div/text()` will extract an empty string, while `//div/.` will extract `<span>foo</span>`.
+
+  ### `contains()` vs `=`
+  `contains()` is used for fuzzy matching, for example, `//div[contains(@class, "title")]` will match `<div class="title">` and `<div class="title extra">`, while `//div[@class="title"]` will only match `<div class="title">`.
+
+  ### Axes
+  Axes are used to navigate between nodes, such as parent-child relationships, sibling relationships, etc.
+
+  Common Axes include:
+  * //ul/li                       # ul > li
+  * //ul/child::li                # ul > li (same)
+  * //ul/following-sibling::li    # ul ~ li
+  * //ul/descendant-or-self::li   # ul li
+  * //ul/ancestor-or-self::li     # $('ul').closest('li')
+
+  ### string functions
+
+  Using string functions to manipulate strings, in order to match or extract the target text.
+
+  Common string functions include:
+  * contains()                 # font[contains(@class,"head")]
+  * starts-with()              # font[starts-with(@class,"head")]
+  * ends-with()                # font[ends-with(@class,"head")]
+  * concat(x,y)
+  * substring(str, start, len)
+  * substring-before("01/02", "/")  #=> 01
+  * substring-after("01/02", "/")   #=> 02
+  * translate()
+  * normalize-space()
+  * string-length()
+
+  ### Regex
+
+  Unlike standard XPath, regex is not natively supported. However, you can use the `re:test()` function to perform regex matching.
+
+  * re:test()                  # //div[re:test(@class, "head", "i")]
+
+  ## Answer with the following format:
+  ```text
+  Thought[FieldA,Snippet 1]: ...(Observe Snippet 1, follow best practices, think about how to write an XPath to extract Field A and write in here)...
+  Thought[FieldA,Snippet 2]: ...(Observe Snippet 2, follow best practices, think about how to write an XPath to extract Field A and write in here)...
+  Anchor[FieldA]: ...(Find the anchor element, when using string matching for the anchor element, one should not rely on specific physical items but rather on categories or abstract concepts)...
+  Traversal[FieldA]: ...(Based on the snippets, think about how to traverse from the anchor element to the target element)...
+  String Extraction[FieldA]: ...(Think how to extract the string from the target element, choose appropriate matching operation and string functions)...
+  Conclusion[FieldA]: ...(The final XPath, making it applicable to HTML with similar web structures beyond Snippet 1 and 2)...
+  ...(When there are multiple fields, think about next field)...
+  Thought[FieldB,Snippet 1]: ...(Same as Above)...
+  Thought[FieldB,Snippet 2]: ...(Same as Above)...
+  Anchor[FieldB]: ...(Same as Above)...
+  Traversal[FieldB]: ...(Same as Above)...
+  String Extraction[FieldB]: ...(Same as Above)...
+  Conclusion[FieldB]: ...(Same as Above)...
+  ...(Repeat the above steps until all fields are completed)...
+  Final Conclusion: ...(Using JSON, for Example：{{"FieldA":"//div[contains(@class, "exampleA")]/text()","FieldB":"//div[contains(@class, "exampleB")]"}})...
+  ```
+
+  ## HTML Snippets：
+  ----------Snippet 1----------
+  ```html
+  {html0}
+  ```
+  To be extracted:
+  ```json
+  {data0}
+  ```
+  ----------Snippet 2----------
+  ```html
+  {html1}
+  ```
+  To be extracted:
+  ```json
+  {data1}
+  ```
+
+  Your Answer:
+
+template_format: f-string

@@ -1,0 +1,30 @@
+input_variables:
+  - context
+  - query
+  - choices
+template: |
+  Based on the question, the given context (webpage content), and the list of choices, select a set of options that best answer the question precisely (multiple selections are allowed). Note that partially correct options that cannot be covered by other options should be considered correct.
+
+  When answering, please follow the format below:
+  ```text
+  Option 1: ...(Your thoughts and analysis on Option 1)...
+  Option 2: ...(Your thoughts and analysis on Option 2)...
+  Option n: ...(Your thoughts and analysis on Option n)...
+  Summary: ...(Based on the question, determine the intent of the questioner and infer the most reasonable combination of options)...
+  Final Conclusion: ...(Form the final conclusion, listing only the sequence numbers, separated by commas, e.g. `1,2`)...
+  ```
+
+  Context：
+  ---------------------
+  {context}
+  ---------------------
+
+  Question：
+  {query}
+
+  Options：
+  {choices}
+
+  Your analysis process, summary, and conclusion:
+
+template_format: f-string

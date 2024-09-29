@@ -27,7 +27,7 @@ def create_cot_program_css_selector_s2():
             "data0": compose(itemgetter(0), itemgetter("datas")),
             "data1": compose(itemgetter(1), itemgetter("datas")),
         }
-        | PromptTemplate.from_file("feilian/prompts/program_selector_cot_s2.yaml")
+        | PromptTemplate.from_file("feilian/prompts/cn/program_selector_cot_s2.yaml")
         | llm
         | parser
     )
@@ -52,7 +52,7 @@ def create_cot_program_css_selector_s1():
             "html": compose(itemgetter(0), itemgetter("htmls")),
             "data": compose(itemgetter(0), itemgetter("datas")),
         }
-        | PromptTemplate.from_file("feilian/prompts/program_selector_cot_s1.yaml")
+        | PromptTemplate.from_file("feilian/prompts/cn/program_selector_cot_s1.yaml")
         | llm
         | parser
     )
