@@ -182,7 +182,7 @@ def swde__construct_question(file_path: str):
         # get common ancestor
         node = get_common_ancestor(nodes)
         cleaned_node = clean_html(node)
-        cleaned_html = minify(cleaned_node.prettify().strip())
+        cleaned_html = minify(cleaned_node.prettify().strip(), keep_closing_tags=True)
 
         question = chain.invoke(
             {

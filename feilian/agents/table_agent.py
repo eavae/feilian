@@ -202,7 +202,7 @@ def detect_tables_node(state) -> State:
         #
 
         table = to_string(node)
-        minified_table = minify(table)
+        minified_table = minify(table, keep_closing_tags=True)
         if not minified_table:
             operations += [
                 {
@@ -253,7 +253,7 @@ def program_xpath_node(state):
     tree = get_tree(snippet, compact=True)
     chain = _create_program_xpath_chain()
     html = to_string(tree)
-    minified_html = minify(html)
+    minified_html = minify(html, keep_closing_tags=True)
     response = chain.invoke(dict(html=minified_html, query=query))
     data = json_repair.loads(response.content)
 

@@ -44,7 +44,7 @@ def swde__stats_token_row(row):
     html = open(html_file_path).read()
     tree = parse_html(html)
     etree_clean_html(tree)
-    cleaned_html = minify(to_string(tree))
+    cleaned_html = minify(to_string(tree), keep_closing_tags=True)
 
     row["raw_tokens"] = tokenizer(html)
     row["cleaned_tokens"] = tokenizer(cleaned_html)
@@ -106,7 +106,7 @@ def read_and_clean_html(file_path: str):
         html_content = f.read()
     soup = bs4.BeautifulSoup(html_content, "html5lib")
     cleaned_soup = soup_clean_html(soup)
-    cleaned_html = minify(cleaned_soup.prettify().strip())
+    cleaned_html = minify(cleaned_soup.prettify().strip(), keep_closing_tags=True)
 
     return html_content, cleaned_html
 
@@ -120,7 +120,7 @@ def read_and_structure_html(file_path: str):
     structure = get_structure(html_text)
     prune_by_structure(soup, structure)
 
-    cleaned_html = minify(soup.prettify().strip())
+    cleaned_html = minify(soup.prettify().strip(), keep_closing_tags=True)
 
     return structure.prettify().strip(), cleaned_html
 
@@ -394,7 +394,7 @@ def swde__stats_parallel_pruning_row(row, until_html_tokens, max_text_tokens):
 
     tree = parse_html(html)
     etree_clean_html(tree)
-    initial_tokens = tokenizer(minify(to_string(tree)))
+    initial_tokens = tokenizer(minify(to_string(tree), keep_closing_tags=True))
     fragment_tokens = []
 
     for xpath in extract_fragments_by_weight(
@@ -403,7 +403,7 @@ def swde__stats_parallel_pruning_row(row, until_html_tokens, max_text_tokens):
         for node in tree.xpath(xpath):
             node.clear()
             node.text = ""
-        tokens = tokenizer(minify(to_string(tree)))
+        tokens = tokenizer(minify(to_string(tree), keep_closing_tags=True))
         fragment_tokens.append(initial_tokens - tokens)
         initial_tokens = tokens
 

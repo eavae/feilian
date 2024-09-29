@@ -5,31 +5,64 @@ input_variables:
   - data1
 output_parser: null
 template: |
-  根据HTML片段中给定的待提取内容，编写用于提取各个字段的XPath。参考多个html片段，逐字段编写较鲁棒的**xpath**，从而适应所有具有相似结构的HTML片段。HTML 节选自实际网页，编写 XPath 时，应加入一些全局特征（比如 id、class 等），从而避免实际运行时选到额外元素。
+  根据HTML片段中给定的待提取内容，编写用于提取各个字段的XPath。参考两个html片段，逐字段编写较鲁棒的**xpath**，从而适应**所有具有相似结构的**HTML片段。HTML 节选自实际网页，编写 XPath 时，应加入一些全局特征（比如 id、class 等），从而避免实际运行时选到额外元素。
 
-  XPATH最佳实践:
+  ## XPATH最佳实践:
   1. 基于强属性（比如：id、class、name等）和标签自身的语义选择合适的**锚点**，比如：`//div[@id="example"]/text()`。
-  2. 选择恰当的函数进行辅助。比如contains()、starts-with()、text()、re:test()等，比如：`//*[re:test(., "^abc$", "i")]/text()"`。
-  3. 基于**锚点**，使用轴（axes）细致的游走到目标节点（无法直接通过1或2找到目标节点时），比如：`/button[@id='goodID']/parent::*/following-sibling::*[1]/button`。
-  4. `text()`函数只能用于匹配**当前节点**（不包含子节点！）的文本，禁止使用长文本匹配。建议选择合理的关键词，配合`contains`或`re:test`进行查找。
-  5. `contains`优于`=`，比如`//div[contains(@class, "title")]`优于`//div[@class="title"]`。
-  6. `contains`的一个参数必须是某属性或函数，禁止类似`//div[contains(., "Some Text")]`的写法，推荐`//div[contains(text(), "Some Text")]`。
-  7. 合理使用`tokenize`, `starts-with`, `matches`, `substring`, `substring-before`, `substring-after`等函数应对需要复杂文本提取的情况。
+  2. 基于**锚点**，使用轴（axes）细致的游走到目标节点（无法直接通过1或2找到目标节点时），比如：`/button[@id='goodID']/parent::*/following-sibling::*[1]/button`。
+  3. 选择恰当的函数裁剪字符串，以获得目标文本。
 
-  回答时，遵循如下格式：
+  ## XPath 细节说明：
+
+  ### `text()` vs `.`
+  `text()` 用于提取当前节点的文本内容，不包含子节点的文本内容。`.` 用于提取当前节点的所有内容，包括子节点的文本内容。比如，对于`<div><span>foo</span></div>`，`//div/text()` 会提取空字符串，而`//div/.` 会提取`<span>foo</span>`。
+
+  ### `contains()` vs `=`
+  `contains()` 用于模糊匹配，比如`//div[contains(@class, "title")]` 会匹配`<div class="title">` 和 `<div class="title extra">`，而`//div[@class="title"]` 只会匹配`<div class="title">`。
+
+  ### Axes（轴）
+  Axes 用于描述节点之间的关系，比如父子关系、兄弟关系等。常用的 Axes 有：
+  * //ul/li                       # ul > li
+  * //ul/child::li                # ul > li (same)
+  * //ul/following-sibling::li    # ul ~ li
+  * //ul/descendant-or-self::li   # ul li
+  * //ul/ancestor-or-self::li     # $('ul').closest('li')
+
+  ### 字符串函数
+  * contains()                 # font[contains(@class,"head")]
+  * starts-with()              # font[starts-with(@class,"head")]
+  * ends-with()                # font[ends-with(@class,"head")]
+  * concat(x,y)
+  * substring(str, start, len)
+  * substring-before("01/02", "/")  #=> 01
+  * substring-after("01/02", "/")   #=> 02
+  * translate()
+  * normalize-space()
+  * string-length()
+
+  ### 正则表达式
+  * re:test()                  # //div[re:test(@class, "head", "i")]
+
+  ## 回答时，遵循如下格式：
   ```text
   思考[字段A,片段一]: ...(观察片段一，记录现象，思考如何编写XPath用以提取字段A，并记录过程)...
   思考[字段A,片段二]: ...(观察片段二，记录现象，思考如何编写XPath用以提取字段A，并记录过程)...
-  思考[字段A]: ...(思考如何编写通用的xpath使之能够同时应用于片段一和片段二的提取)...
+  锚点[字段A]: ...(判断锚点元素，使用字符串匹配锚点元素时，不应依赖具体的实体物品，而应依赖于类别或抽象的概念)...
+  游走[字段A]: ...(基于原始HTML，思考如何从锚点元素如何游走到目标元素)...
+  字符串提取[字段A]: ...(判断如何从目标元素中提取字符串，选择合适的函数，比如`contains()`, `text()`, `.`等)...
+  结论[字段A]: ...(最终的 XPath，使之可应用于片段一、二之外的，具有类似网页结构的 HTML)...
   ...(当有多个字段时，思考字段二)...
   思考[字段B,片段一]: ...(同上)...
   思考[字段B,片段二]: ...(同上)...
-  思考[字段B]: ...(同上)...
+  锚点[字段A]: ...(同上)...
+  游走[字段A]: ...(同上)...
+  字符串提取[字段A]: ...(同上)...
+  结论[字段B]: ...(同上)...
   ...(重复上述步骤，直到完成所有字段)...
   最终结论: ...(使用 JSON 格式回答，比如：{{"字段A":"//div[contains(@class, "exampleA")]/text()","字段B":"//div[contains(@class, "exampleB")]"}})...
   ```
 
-  HTML节选：
+  ## HTML节选：
   ----------片段一----------
   ```html
   {html0}

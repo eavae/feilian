@@ -35,6 +35,7 @@ warnings.filterwarnings(action="ignore", category=DataLossWarning, module=r"html
 
 PROGRAM_FRAGMENTS = 2
 PROGRAM_TYPE = "xpath"
+LANG = "cn"
 
 fix_chain_state = []
 
@@ -96,11 +97,11 @@ def program_node(state: State):
     for snippet in state["snippets"]:
         tree = parse_html(snippet["raw_html"])
         clean_html(tree)
-        tokens_before += tokenizer(minify(to_string(tree)))
+        tokens_before += tokenizer(minify(to_string(tree), keep_closing_tags=True))
 
         tree = run_operators(tree, snippet["ops"])
         html = to_string(tree)
-        minified_html = minify(html)
+        minified_html = minify(html, keep_closing_tags=True)
         tokens_after += tokenizer(minified_html)
 
         htmls.append(minified_html)
@@ -310,8 +311,8 @@ def build_graph(memory=None):
     # add nodes
     builder.add_node("query_conversion", query_conversion_node)
     builder.add_node("fragments_detection", fragments_detection_node)
-    builder.add_node("program_xpath", program_node)
     builder.add_node("merge_node", merge_node)
+    builder.add_node("program_xpath", program_node)
 
     # add edges
     builder.add_edge(START, "query_conversion")

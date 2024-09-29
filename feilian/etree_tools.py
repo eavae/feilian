@@ -406,7 +406,7 @@ def remove_by_xpath(tree: etree._Element, xpath: str):
         ele.getparent().remove(ele)
 
 
-def extract_text_by_xpath(tree: etree._Element, xpath: str):
+def extract_text_by_xpath(tree: etree._Element | etree._ElementTree, xpath: str):
     if not isinstance(xpath, str):
         return []
 
@@ -432,7 +432,7 @@ def extract_text_by_xpath(tree: etree._Element, xpath: str):
 
     results: List[str] = [html.unescape(x) for x in results]
     results = [x.strip() for x in results if x.strip()]
-    results = [re.sub(r"\s+", " ", x) for x in results]
+    results = [re.sub(r"  +", " ", x) for x in results]
 
     return results
 

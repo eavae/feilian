@@ -35,3 +35,4 @@ def _create_critic_xpath_chain():
 
 
 critic_xpath_chain = _create_critic_xpath_chain()
+critic_xpath_chain_en = _create_critic_xpath_chain()
