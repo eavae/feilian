@@ -112,6 +112,8 @@ def eval(xpath_df: pd.DataFrame, candidates=None):
     overall_fn = 0
 
     eval_metrics = []
+    predictions = []
+    ground_truths = []
     for category, site in tqdm.tqdm(candidates):
         true_positives = 0
         false_positives = 0
@@ -120,20 +122,23 @@ def eval(xpath_df: pd.DataFrame, candidates=None):
         ground_truth_df = data_df[
             (data_df["category"] == category) & (data_df["site"] == site)
         ]
-        ground_truth_df = ground_truth_df.sample(128, random_state=0)
+        ground_truth_df = ground_truth_df.sample(100, random_state=0)
         xpath_df_subset = xpath_df[
             (xpath_df["category"] == category) & (xpath_df["site"] == site)
         ]
         for i, row in ground_truth_df.iterrows():
-            predict = run_xpath(
+            prediction = run_xpath(
                 os.path.join(DATA_ROOT, row["file_path"]),
                 xpath_df_subset.to_dict(orient="records"),
             )
             ground_truth = json.loads(row["attributes"])
-            tp, fp, fn = eval_objects(predict, ground_truth)
+            tp, fp, fn = eval_objects(prediction, ground_truth)
             true_positives += tp
             false_positives += fp
             false_negatives += fn
+
+            predictions.append(json.dumps(prediction))
+            ground_truths.append(json.dumps(ground_truth))
 
         accuracy = true_positives / (
             true_positives + false_positives + false_negatives + 1e-6
@@ -157,26 +162,17 @@ def eval(xpath_df: pd.DataFrame, candidates=None):
         eval_metrics,
         columns=["category", "site", "accuracy", "precision", "recall", "f1"],
     )
-    return eval_df
+    predictions_df = pd.DataFrame(
+        {"prediction": predictions, "ground_truth": ground_truths}
+    )
+    return eval_df, predictions_df
 
 
 if __name__ == "__main__":
-    candidates = [
-        ("auto", "autoweb"),
-        ("movie", "boxofficemojo"),
-        ("nbaplayer", "wiki"),
-        ("camera", "beachaudio"),
-        ("camera", "jr"),
-        ("job", "jobcircle"),
-        ("nbaplayer", "nba"),
-        ("nbaplayer", "usatoday"),
-        ("restaurant", "pickarestaurant"),
-        ("university", "collegeboard"),
-    ]
-    xpath_df = program_xpath(candidates=candidates)
-    # xpath_df.to_csv("swde_xpath_program.csv", index=False)
-    # df = pd.read_csv("ranked_xpaths.csv")
-    # xpath_df = pd.read_csv("swde_xpath_program_s1.csv")
-    eval_df = eval(xpath_df)
-    eval_df.to_csv("swde_xpath_program_eval.csv", index=False)
+    xpath_df = program_xpath()
+    eval_df, pred_df = eval(xpath_df)
+
+    xpath_df.to_csv("data/swde_xpath_en.csv", index=False)
+    eval_df.to_csv("data/swde_xpath_program_eval_en.csv", index=False)
+    pred_df.to_csv("data/swde_xpath_program_predictions_en.csv", index=False)
     pass

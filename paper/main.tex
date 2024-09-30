@@ -1,0 +1,169 @@
+\documentclass{article}
+
+\usepackage{ml4cps}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{cleveref}       % smart cross-referencing
+\usepackage{lipsum}         % Can be removed after putting your text content
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{doi}
+
+\title{\large FEC, A Fast and Efficient LLM Based Web Crawler Agent for Large Scale Web Data Extraction}
+
+\date{2024-12-12}
+
+\newif\ifuniqueAffiliation
+\uniqueAffiliationtrue
+
+\ifuniqueAffiliation % Standard variant of author block
+\author{
+	\hspace{1mm}Li Yu\\
+	\\
+	\texttt{lijingyu68@mail.com} \\
+	%% Author 2
+	\And
+	\hspace{1mm} Author 2\\
+	\\
+	\texttt{exmaple@mail.com} \\
+	%% Author 3
+	\And
+	\hspace{1mm} Author 3\\
+	\\
+	\texttt{exmaple@mail.com} \\
+}
+\else
+% Multiple affiliations variant of author block
+\usepackage{authblk}
+\renewcommand\Authfont{\bfseries}
+\setlength{\affilsep}{0em}
+% box is needed for correct spacing with authblk
+\author[1]{%
+	\href{https://orcid.org/0000-0000-0000-0000}{\usebox{\orcid}\hspace{1mm}First author}%
+}
+\author[1,2]{%
+	\href{https://orcid.org/0000-0000-0000-0000}{\usebox{\orcid}\hspace{1mm}Second author}%
+}
+\affil[1]{Affiliation, Address}
+\affil[2]{Affiliation, Address}
+\fi
+
+\renewcommand{\shorttitle}{Contribution for ML4CPS 2024}
+
+%%% Add PDF metadata to help others organize their library
+%%% Once the PDF is generated, you can check the metadata with
+%%% $ pdfinfo template.pdf
+\hypersetup{
+pdftitle={contribution title},
+pdfsubject={contribution subject},
+pdfauthor={First author, Second author},
+pdfkeywords={First keyword, Second keyword, Third keyword},
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+	\lipsum[1]
+\end{abstract}
+
+
+% add keywords
+\keywords{First keyword \and Second keyword \and More}
+
+
+\section{Introduction}
+\lipsum[2]
+\lipsum[3]
+
+
+\section{Headings: first level}
+\label{sec:headings}
+
+\lipsum[4] See Section \ref{sec:headings}.
+
+\subsection{Headings: second level}
+\lipsum[5]
+\begin{equation}
+	\xi _{ij}(t)=P(x_{t}=i,x_{t+1}=j|y,v,w;\theta)= {\frac {\alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}{\sum _{i=1}^{N} \sum _{j=1}^{N} \alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}}
+\end{equation}
+
+\subsubsection{Headings: third level}
+\lipsum[6]
+
+\paragraph{Paragraph}
+\lipsum[7]
+
+
+
+\section{Examples of citations, figures, tables, references}
+\label{sec:others}
+
+\subsection{Citations}
+Here is an example how to do citations: Article \cite{ref_article}, book \cite{ref_book}, proceedings \cite{ref_proc}, url  \cite{ref_url}. 
+
+\subsection{Figures}
+\lipsum[10]
+See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
+\lipsum[11]
+
+\begin{figure}
+	\centering
+	\fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+	\caption{Sample figure caption.}
+	\label{fig:fig1}
+\end{figure}
+
+\subsection{Tables}
+See awesome Table~\ref{tab:table}.
+
+
+\begin{table}
+	\caption{Sample table title}
+	\centering
+	\begin{tabular}{lll}
+		\toprule
+		\multicolumn{2}{c}{Part}                   \\
+		\cmidrule(r){1-2}
+		Name     & Description     & Size ($\mu$m) \\
+		\midrule
+		Dendrite & Input terminal  & $\sim$100     \\
+		Axon     & Output terminal & $\sim$10      \\
+		Soma     & Cell body       & up to $10^6$  \\
+		\bottomrule
+	\end{tabular}
+	\label{tab:table}
+\end{table}
+
+\subsection{Lists}
+\begin{itemize}
+	\item Lorem ipsum dolor sit amet
+	\item consectetur adipiscing elit.
+\end{itemize}
+
+\section*{Acknowledgments}
+Add acknowledgments
+
+\bibliographystyle{abbrv}
+%\bibliography{references}  %%% Uncomment this line and comment out the ``thebibliography'' section below to use the external .bib file (using bibtex) .
+
+
+%%% Uncomment this section and comment out the \bibliography{references} line above to use inline references.
+\begin{thebibliography}{99.}
+	\bibitem{ref_article}Author, F.: Article title. Journal \textbf{2}(5), 99--110 (2016)
+	\bibitem{ref_book}Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,Location (1999)
+	\bibitem{ref_proc}Author, A.-B.: Contribution title. In: 9th International Proceedings on Proceedings, pp. 1--2. Publisher, Location (2010)
+	\bibitem{ref_url} ML4CPS Homepage, \url{https://www.hsu-hh.de/imb/en/ml4cps}. Last accessed 19 Sep 2023
+\end{thebibliography}
+
+
+
+\end{document}
