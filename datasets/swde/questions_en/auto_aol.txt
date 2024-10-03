@@ -1,4 +1,4 @@
-What are the fuel economy, model, and price details for the auto described in the context, formatted as a JSON response?
+What are the fuel economy, model, and price (only MSRP) for the auto described in the context, formatted as a JSON response?
 
 ```json
 {

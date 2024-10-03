@@ -3,7 +3,7 @@ input_variables:
   - query
   - choices
 template: |
-  Based on the question, the given context (webpage content), and the list of choices, select a set of options that best answer the question precisely (multiple selections are allowed). Note that partially correct options that cannot be covered by other options should be considered correct.
+  Based on the question, the given context (webpage content), and the list of choices, select a set of options that best answer the question precisely (multiple selections are allowed). Note that partially correct options that cannot be covered by other options should be considered correct. when there are multiple possible answers to a single-choice question, choose the most significant one (such as the title). When the context contains multiple similar expressions, choose the one that is easier to extract using xpath or css selector (target text fully encapsulated in a tag rather than a sentence).
 
   When answering, please follow the format below:
   ```text

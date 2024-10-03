@@ -32,7 +32,6 @@ warnings.filterwarnings(action="ignore", category=DataLossWarning, module=r"html
 
 PROGRAM_FRAGMENTS = 2
 PROGRAM_TYPE = "xpath"
-LANG = "cn"
 
 fix_chain_state = []
 

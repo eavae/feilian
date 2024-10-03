@@ -1,4 +1,3 @@
-import re
 import tiktoken
 import json
 from typing_extensions import TypedDict
@@ -8,11 +7,11 @@ from lxml import etree
 from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
 from copy import deepcopy
-from markdownify import MarkdownConverter
 from feilian.chains.information_extraction_chain import (
     information_extraction_chain,
     best_composition_chain,
 )
+from minify_html import minify
 
 from feilian.etree_tools import (
     parse_html,
@@ -22,16 +21,19 @@ from feilian.etree_tools import (
     extraction_based_pruning,
 )
 from feilian.etree_token_stats import extract_fragments_by_weight
-from feilian.text_tools import convert_html_to_text
+
 from feilian.agents.reducers import merge_operators
 from feilian.tools import format_to_ordered_list
 
 
 encoder = tiktoken.encoding_for_model("gpt-4")
-converter = MarkdownConverter()
 
 
-class OperatorTypes(Enum):
+def convert_html_to_text(html: str) -> str:
+    return minify(html)
+
+
+class OperatorTypes(str, Enum):
     PRUNE = "prune"
     EXTRACT = "extract"
 
@@ -93,7 +95,7 @@ def run_operators(tree, ops: List[Operator]) -> etree._Element:
 def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionState:
     ops = []
     tree = parse_html(state["raw_html"])
-    clean_html(tree)
+    clean_html(tree, deep=True)
 
     for xpath in extract_fragments_by_weight(tree, tokenizer):
         nodes = tree.xpath(xpath)
@@ -166,10 +168,9 @@ def classify_fragments_node(state: FragmentDetectionState) -> FragmentDetectionS
                 prune_ops.append(op)
 
         tree = parse_html(state["raw_html"])
-        clean_html(tree)
+        clean_html(tree, deep=True)
         run_operators(tree, prune_ops)
-        context = converter.convert(to_string(tree))
-        context = re.sub(r"\n{3,}", "\n\n", context)
+        context = convert_html_to_text(to_string(tree))
 
         choice_str = format_to_ordered_list(choices)
         best_choices = best_composition_chain.invoke(

@@ -3,11 +3,23 @@ import pandas as pd
 import json
 import tqdm
 import html
+import tiktoken
+from minify_html import minify
 from typing import Dict, List
 from collections import defaultdict
 
-from feilian.agents.agent import build_graph, build_state, rank_xpath_node
+from feilian.agents.agent import (
+    build_graph as build_program_xpath_graph,
+    build_state,
+    rank_xpath_node,
+)
+from feilian.agents.fragments_detection import (
+    build_graph as build_fragment_detection_graph,
+    run_operators,
+)
 from feilian.etree_tools import (
+    to_string,
+    clean_html,
     parse_html,
     extract_text_by_xpath,
     extract_text_by_css_selector,
@@ -17,6 +29,21 @@ from feilian.etree_tools import (
 DATA_ROOT = "data/swde"
 PROGRAM_TYPE = "xpath"
 
+encoder = tiktoken.encoding_for_model("gpt-4")
+
+
+def tokenizer(text):
+    if not text:
+        return 0
+    return len(encoder.encode(text))
+
+
+def get_prompt(category: str, site: str):
+    return open(
+        f"datasets/swde/questions_{os.getenv('PROMPT_LANG', 'cn')}/{category}_{site}.txt",
+        "r",
+    ).read()
+
 
 def program_xpath(candidates: Dict = None):
     df = pd.read_csv("data/swde_token_stats.csv")
@@ -25,11 +52,11 @@ def program_xpath(candidates: Dict = None):
         candidates = df[["category", "site"]].drop_duplicates().values.tolist()
 
     dfs = []
-    graph = build_graph()
+    graph = build_program_xpath_graph()
     for category, site in candidates:
         random_state = 0
         root_dir = "data/swde"
-        query = open(f"datasets/swde/questions_cn/{category}_{site}.txt", "r").read()
+        query = get_prompt(category, site)
 
         df_subset = df[(df["category"] == category) & (df["site"] == site)]
         df_subset = df_subset.sample(3, random_state=random_state)
@@ -41,6 +68,75 @@ def program_xpath(candidates: Dict = None):
         state = graph.invoke(state, config={"configurable": {"thread_id": "1"}})
         result_df = rank_xpath_node(state, category, site)
         dfs.append(result_df)
+    df = pd.concat(dfs)
+    return df
+
+
+def build_fragment_detection_state(file_path: str, query: str, page_id: str):
+    raw_html = open(file_path, "r").read()
+    return {
+        "id": page_id,
+        "raw_html": raw_html,
+        "query": query,
+    }
+
+
+def detect_fragments(candidates: Dict = None):
+    df = pd.read_csv("data/swde_token_stats.csv")
+
+    if not candidates:
+        candidates = df[["category", "site"]].drop_duplicates().values.tolist()
+
+    dfs = []
+    graph = build_fragment_detection_graph()
+    for category, site in candidates:
+        random_state = 0
+        query = get_prompt(category, site)
+
+        df_subset = df[(df["category"] == category) & (df["site"] == site)]
+        df_subset = df_subset.sample(3, random_state=random_state)
+
+        rows = []
+        for i, row in df_subset.iterrows():
+            state = build_fragment_detection_state(
+                os.path.join(DATA_ROOT, row["file_path"]),
+                query,
+                row["page_id"],
+            )
+
+            tree = parse_html(state["raw_html"])
+            clean_html(tree)
+            tokens_before = tokenizer(minify(to_string(tree), keep_closing_tags=True))
+
+            state = graph.invoke(state)
+
+            tree = run_operators(tree, state["ops"])
+            html = to_string(tree)
+            minified_html = minify(html, keep_closing_tags=True)
+            tokens_after = tokenizer(minified_html)
+
+            tp, fp, fn = eval_objects(state["extracted"], json.loads(row["attributes"]))
+            accuracy = tp / (tp + fp + fn + 1e-8)
+            precision = tp / (tp + fp + 1e-8)
+            recall = tp / (tp + fn + 1e-8)
+            f1 = 2 * precision * recall / (precision + recall + 1e-8)
+            rows.append(
+                {
+                    "id": state["id"],
+                    "category": category,
+                    "site": site,
+                    "ops": json.dumps(state["ops"]),
+                    "prediction": json.dumps(state["extracted"]),
+                    "ground_truth": row["attributes"],
+                    "tokens_before": tokens_before,
+                    "tokens_after": tokens_after,
+                    "accuracy": accuracy,
+                    "precision": precision,
+                    "recall": recall,
+                    "f1": f1,
+                }
+            )
+        dfs.append(pd.DataFrame(rows))
     df = pd.concat(dfs)
     return df
 
@@ -169,10 +265,19 @@ def eval(xpath_df: pd.DataFrame, candidates=None):
 
 
 if __name__ == "__main__":
-    xpath_df = program_xpath()
-    eval_df, pred_df = eval(xpath_df)
-
-    xpath_df.to_csv("data/swde_xpath_en.csv", index=False)
-    eval_df.to_csv("data/swde_xpath_program_eval_en.csv", index=False)
-    pred_df.to_csv("data/swde_xpath_program_predictions_en.csv", index=False)
+    df = detect_fragments(
+        candidates=[
+            # ("auto", "aol"),
+            # ("auto", "autobytel"),
+            # ("auto", "automotive"),
+            ("auto", "autoweb"),
+            # ("auto", "carquotes"),
+            # ("auto", "cars"),
+            # ("auto", "kbb"),
+            # ("auto", "motortrend"),
+            # ("auto", "msn"),
+            # ("auto", "yahoo"),
+        ]
+    )
+    df.to_csv("swde_fragments.csv", index=False)
     pass

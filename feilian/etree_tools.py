@@ -8,6 +8,7 @@ from urllib.parse import unquote
 from typing import List, Optional
 from collections import defaultdict
 from lxml.cssselect import CSSSelector
+from functools import partial
 
 from feilian.html_constants import INTERACTIVE_ELEMENTS
 
@@ -163,7 +164,7 @@ def _remove(element: etree._Element):
         p.remove(element)
 
 
-def _clean_html(ele: etree._Element):
+def _clean_html(ele: etree._Element, deep=False):
     # 移除非元素的节点
     if not isinstance(ele, etree._Element):
         _remove(ele)
@@ -179,12 +180,11 @@ def _clean_html(ele: etree._Element):
         _remove(ele)
         return
 
-    # 移除空白元素
-    # if hasattr(ele, "tag") and not ele.getchildren():
-    #     text = ele.text.strip() if ele.text else ""
-    #     if not text:
-    #         _remove(ele)
-    #         return
+    if deep:
+        # 移除图片
+        if ele.tag == "img":
+            _remove(ele)
+            return
 
     # 移除 display:none
     if "style" in ele.attrib and re.search(r"display\s*:\s*none", ele.attrib["style"]):
@@ -194,24 +194,28 @@ def _clean_html(ele: etree._Element):
 
     # 移除多余属性
     if ele.attrib:
-        for key in list(ele.attrib.keys()):
-            if key not in ["class", "id"]:
+        if deep:
+            for key in list(ele.attrib.keys()):
                 del ele.attrib[key]
+        else:
+            for key in list(ele.attrib.keys()):
+                if key not in ["class", "id"]:
+                    del ele.attrib[key]
 
-        # 移除 href="javascript:*"
-        if "href" in ele.attrib and ele.attrib["href"].startswith("javascript:"):
-            del ele.attrib["href"]
+            # 移除 href="javascript:*"
+            if "href" in ele.attrib and ele.attrib["href"].startswith("javascript:"):
+                del ele.attrib["href"]
 
-        # 移除 img src
-        if ele.tag == "img" and "src" in ele.attrib:
-            del ele.attrib["src"]
+            # 移除 img src
+            if ele.tag == "img" and "src" in ele.attrib:
+                del ele.attrib["src"]
 
 
-def clean_html(ele: etree._Element | etree._ElementTree):
+def clean_html(ele: etree._Element | etree._ElementTree, deep=False):
     if isinstance(ele, etree._ElementTree):
-        post_order_traversal(ele.getroot(), _clean_html)
+        post_order_traversal(ele.getroot(), partial(_clean_html, deep=deep))
     else:
-        post_order_traversal(ele, _clean_html)
+        post_order_traversal(ele, partial(_clean_html, deep=deep))
     return ele
 
 
