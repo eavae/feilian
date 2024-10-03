@@ -4,6 +4,6 @@ What are the fuel economy, model, and price (only MSRP) for the auto described i
 {
   "fuel_economy": ["..."],
   "model": ["..."],
-  "price": ["..."]
+  "price": ["$..."]
 }
 ```

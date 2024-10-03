@@ -5,6 +5,6 @@ What are the specifications of the vehicle described in the context, including e
   "engine": ["..."],
   "fuel_economy": ["..."],
   "model": ["..."],
-  "price": ["..."]
+  "price": ["$..."]
 }
 ```
