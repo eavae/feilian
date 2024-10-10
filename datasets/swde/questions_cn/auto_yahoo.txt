@@ -3,9 +3,9 @@
 回答格式（JSON）：
 ```json
 {
-  "engine": ["发动机规格"],
-  "fuel_economy": ["燃油经济性"],
-  "model": ["型号名称"],
-  "price": ["MSRP"]
+  "engine": ["..."],
+  "fuel_economy": ["..."],
+  "model": ["..."],
+  "price": ["..."]
 }
 ```

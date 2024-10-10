@@ -1,10 +1,1 @@
-请提供以下信息：这辆车的燃油经济性（城市和高速公路）、型号名称以及制造商建议零售价（MSRP）。
-
-回答格式（JSON）：
-```json
-{
-  "fuel_economy": ["City MPG / Hwy MPG"],
-  "model": ["Model Name"],
-  "price": ["$MSRP"]
-}
-```
+请提供以下信息：这辆车的燃油经济性（城市和高速公路）、型号名称以及制造商建议零售价（MSRP）。字段名称分别是：`fuel_economy`, `model` 和 `price`。

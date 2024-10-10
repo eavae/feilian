@@ -3,7 +3,9 @@ import pandas as pd
 import json
 import tqdm
 import html
+import re
 import tiktoken
+from lxml import etree
 from minify_html import minify
 from typing import Dict, List
 from collections import defaultdict
@@ -13,7 +15,7 @@ from feilian.agents.agent import (
     build_state,
     rank_xpath_node,
 )
-from feilian.agents.fragments_detection import (
+from feilian.agents.fragments_detection_hint import (
     build_graph as build_fragment_detection_graph,
     run_operators,
 )
@@ -43,6 +45,37 @@ def get_prompt(category: str, site: str):
         f"datasets/swde/questions_{os.getenv('PROMPT_LANG', 'cn')}/{category}_{site}.txt",
         "r",
     ).read()
+
+
+def normalize(text):
+    # print(text_list)
+    text = html.unescape(text)
+    text = text.replace("&lt;", "<")
+    text = text.replace("&gt;", ">")
+    text = text.replace("&amp;", "&")
+    text = text.replace("&quot;", '"')
+    text = text.replace("&#39;", "'").replace("&apos;", "'")
+    text = text.replace("&#150;", "–")
+    text = text.replace("&nbsp;", " ")
+    text = text.replace("&#160;", " ")
+    text = text.replace("&#039;", "'")
+    text = text.replace("&#34;", '"')
+    text = text.replace("&reg;", "®")
+    text = text.replace("&rsquo;", "’")
+    text = text.replace("&#8226;", "•")
+    text = text.replace("&ndash;", "–")
+    text = text.replace("&#x27;", "'")
+    text = text.replace("&#40;", "(")
+    text = text.replace("&#41;", ")")
+    text = text.replace("&#47;", "/")
+    text = text.replace("&#43;", "+")
+    text = text.replace("&#035;", "#")
+    text = text.replace("&#38;", "&")
+    text = text.replace("&eacute;", "é")
+    text = text.replace("&frac12;", "½")
+    text = text.replace("  ", " ")
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
 
 
 def program_xpath(candidates: Dict = None):
@@ -81,13 +114,39 @@ def build_fragment_detection_state(file_path: str, query: str, page_id: str):
     }
 
 
+def get_full_text(tree, target_text):
+    if isinstance(tree, etree._ElementTree):
+        tree = tree.getroot()
+
+    objs = []
+    for text in tree.itertext():
+        normalized_text = html.unescape(html.unescape(text)).strip()
+        normalized_text = re.sub(r"  +", " ", normalized_text)
+        if target_text in normalized_text:
+            additional_length = len(text) - len(target_text)
+            objs.append(
+                {
+                    "full_text": text,
+                    "score": 1 - additional_length / len(text),
+                }
+            )
+
+    objs = sorted(objs, key=lambda x: x["score"], reverse=True)
+    if objs:
+        return objs[0]["full_text"]
+    return target_text
+
+
 def detect_fragments(candidates: Dict = None):
     df = pd.read_csv("data/swde_token_stats.csv")
 
     if not candidates:
         candidates = df[["category", "site"]].drop_duplicates().values.tolist()
 
-    dfs = []
+    true_positive = 0
+    false_positive = 0
+    false_negative = 0
+
     graph = build_fragment_detection_graph()
     for category, site in candidates:
         random_state = 0
@@ -96,49 +155,85 @@ def detect_fragments(candidates: Dict = None):
         df_subset = df[(df["category"] == category) & (df["site"] == site)]
         df_subset = df_subset.sample(3, random_state=random_state)
 
-        rows = []
         for i, row in df_subset.iterrows():
             state = build_fragment_detection_state(
                 os.path.join(DATA_ROOT, row["file_path"]),
                 query,
-                row["page_id"],
+                f"{category}_{site}_{row['page_id']}",
             )
 
             tree = parse_html(state["raw_html"])
             clean_html(tree)
-            tokens_before = tokenizer(minify(to_string(tree), keep_closing_tags=True))
 
             state = graph.invoke(state)
 
-            tree = run_operators(tree, state["ops"])
-            html = to_string(tree)
-            minified_html = minify(html, keep_closing_tags=True)
-            tokens_after = tokenizer(minified_html)
+            # with open(f"tests/data/hint_fragments/{state['id']}.json", "w") as f:
+            #     del state["raw_html"]
+            #     del state["ops"]
+            #     f.write(json.dumps(state, ensure_ascii=False, indent=4))
+            # state = json.loads(
+            #     open(
+            #         f"tests/data/hint_fragments/{row['category']}_{row['site']}_{row['page_id']}.json",
+            #         "r",
+            #     ).read()
+            # )
 
-            tp, fp, fn = eval_objects(state["extracted"], json.loads(row["attributes"]))
-            accuracy = tp / (tp + fp + fn + 1e-8)
-            precision = tp / (tp + fp + 1e-8)
-            recall = tp / (tp + fn + 1e-8)
-            f1 = 2 * precision * recall / (precision + recall + 1e-8)
-            rows.append(
-                {
-                    "id": state["id"],
-                    "category": category,
-                    "site": site,
-                    "ops": json.dumps(state["ops"]),
-                    "prediction": json.dumps(state["extracted"]),
-                    "ground_truth": row["attributes"],
-                    "tokens_before": tokens_before,
-                    "tokens_after": tokens_after,
-                    "accuracy": accuracy,
-                    "precision": precision,
-                    "recall": recall,
-                    "f1": f1,
-                }
-            )
-        dfs.append(pd.DataFrame(rows))
-    df = pd.concat(dfs)
-    return df
+            # tree = run_operators(tree, state["ops"])
+            # html = to_string(tree)
+            # minified_html = minify(html, keep_closing_tags=True)
+            # tokens_after = tokenizer(minified_html)
+
+            ground_truths = json.loads(row["attributes"])
+            prediction = {}
+            for field_name, ops in state["field_operators"].items():
+                # prediction[field_name] = ops[-1]["data"]["value"]
+                raw_html = open(os.path.join(DATA_ROOT, row["file_path"]), "r").read()
+                tree = parse_html(raw_html)
+                clean_html(tree)
+                run_operators(tree, ops)
+                values = []
+                for v in ops[-1]["data"]["value"]:
+                    values.append(get_full_text(tree, v))
+                prediction[field_name] = values
+
+            tp, fp, fn = eval_objects(prediction, ground_truths)
+            true_positive += tp
+            false_positive += fp
+            false_negative += fn
+
+    accuracy = true_positive / (true_positive + false_positive + false_negative + 1e-6)
+    precision = true_positive / (true_positive + false_positive + 1e-6)
+    recall = true_positive / (true_positive + false_negative + 1e-6)
+    f1 = 2 * precision * recall / (precision + recall + 1e-6)
+    print(f"accuracy: {accuracy}, precision: {precision}, recall: {recall}, f1: {f1}")
+
+
+def test_fragments():
+    source_df = pd.read_csv("data/swde_token_stats.csv")
+    df = pd.read_csv("data/swde_fragments.csv")
+
+    for i, row in df.iterrows():
+        source_row = source_df[
+            (source_df["page_id"] == row["id"])
+            & (source_df["category"] == row["category"])
+            & (source_df["site"] == row["site"])
+        ].iloc[0]
+        file_path = os.path.join(DATA_ROOT, source_row["file_path"])
+        raw_html = open(file_path, "r").read()
+        tree = parse_html(raw_html)
+        ops = json.loads(row["ops"])
+        tree = run_operators(tree, ops)
+        html = minify(to_string(tree), keep_closing_tags=True)
+
+        ground_truths = json.loads(row["ground_truth"])
+        for key, values in ground_truths.items():
+            if any([x in html for x in values]):
+                continue
+
+            values = [normalize(x) for x in values]
+            if any([x in html for x in values]):
+                continue
+            pass
 
 
 def run_xpath(file_path: str, xpaths: List[Dict]):
@@ -155,10 +250,6 @@ def run_xpath(file_path: str, xpaths: List[Dict]):
         data[obj["field_name"]] += extract_fn(tree, obj["xpath"])
 
     return dict(data)
-
-
-def unescape_and_strip(text):
-    return html.unescape(text).strip()
 
 
 def eval_array(predict: List[str], ground_truth: List[str]):
@@ -187,8 +278,8 @@ def eval_objects(predict, ground_truth):
     for field_name in set(predict.keys()) | set(ground_truth.keys()):
         ground_truth_values = ground_truth.get(field_name, [])
         predict_values = predict.get(field_name, [])
-        predict_values = [unescape_and_strip(x) for x in predict_values]
-        ground_truth_values = [unescape_and_strip(x) for x in ground_truth_values]
+        predict_values = [normalize(x) for x in predict_values]
+        ground_truth_values = [normalize(x) for x in ground_truth_values]
         tp, fp, fn = eval_array(predict_values, ground_truth_values)
         true_positives += tp
         false_positives += fp
@@ -265,19 +356,24 @@ def eval(xpath_df: pd.DataFrame, candidates=None):
 
 
 if __name__ == "__main__":
+    # from feilian.agents.fragments_detection_hint import ranking_node
+
+    # state = json.loads(open("temp.json", "r").read())
+    # ranking_node(state)
+
     df = detect_fragments(
         candidates=[
-            # ("auto", "aol"),
-            # ("auto", "autobytel"),
-            # ("auto", "automotive"),
+            ("auto", "aol"),
+            ("auto", "autobytel"),
+            ("auto", "automotive"),
             ("auto", "autoweb"),
-            # ("auto", "carquotes"),
-            # ("auto", "cars"),
-            # ("auto", "kbb"),
-            # ("auto", "motortrend"),
-            # ("auto", "msn"),
-            # ("auto", "yahoo"),
+            ("auto", "carquotes"),
+            ("auto", "cars"),
+            ("auto", "kbb"),
+            ("auto", "motortrend"),
+            ("auto", "msn"),
+            ("auto", "yahoo"),
         ]
     )
-    df.to_csv("swde_fragments.csv", index=False)
+    # df.to_csv("swde_fragments.csv", index=False)
     pass

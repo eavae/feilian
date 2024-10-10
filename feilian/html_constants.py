@@ -75,4 +75,25 @@ INLINE_ELEMENTS = {
     "var",
 }
 
+INVISIBLE_ELEMENTS = [
+    "head",
+    "title",
+]
+
 CONTAINER_ELEMENTS = {"table", "ul", "ol", "section", "article"}
+
+TEXT_VISUAL_PRIORITY = [
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "strong",
+    "em",
+    "b",
+    "a",
+    "p",
+    "span",
+    "div",
+]

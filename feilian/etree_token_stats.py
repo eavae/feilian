@@ -239,7 +239,7 @@ def extract_fragments_by_weight(
     tree: etree._ElementTree | etree._Element,
     tokenizer: Callable,
     until_html_tokens: int = 2048,
-    max_text_tokens: int = 512,
+    max_text_tokens: int = 1024,
 ):
     token_tree: Node = build_token_tree(tree, tokenizer)
     while True:

@@ -2,7 +2,12 @@ input_variables:
   - context
   - query
 template: |
-  According to the question, extract the required information from the given context and present the result in JSON format. The given context may be incomplete or may not contain the answer, so inference needs to be made based on the question. The JSON in the final conclusion must not include fields that are not mentioned in the context. When there are multiple possible answers to a single-choice question, choose the most significant one (such as the title). When the context contains multiple similar expressions, choose the one that is easier to extract using xpath or css selector (target text fully encapsulated in a tag rather than a sentence).
+  According to the question, extract the required information from the given context and present the result in JSON format. The given context may be incomplete or may not contain the answer, so inference needs to be made based on the question. The JSON in the final conclusion exclude fields that are not mentioned in the context.
+
+  Prioritize with following rules (in order):
+  1. the container of the target text is fully encapsulated in tags, rather than in sentences.
+  2. the container of the target text is more important in html's semantic.
+  3. the container of the target text is closer to other fields in the context.
 
   When answering, follow the format below:
   ```text

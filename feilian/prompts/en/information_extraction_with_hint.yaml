@@ -1,0 +1,36 @@
+input_variables:
+  - context
+  - query
+  - json_example
+template: |
+  Extract the information required by the question from the given context and provide hints for the upcoming target text elements or text, presenting the result in JSON format. The given context may be incomplete or may not contain the answer, therefore, the final JSON must not include fields that are not mentioned in the context.
+
+  Prioritize with following rules (high to low):
+  1. the container of the target text is more important in html's semantic.
+  2. the container of the target text is fully encapsulated in tags, rather than in sentences.
+  3. the container of the target text is closer to other fields in the context.
+
+  Hints include (priority from high to low):
+  1. Hint text that is closer to value in the context, such as `phone number`, `address:` etc.
+  2. Tags that directly contain the target are semantically rich, such as: `h1`, `section`, `label`, etc. (tags like `div`, `span` used for layout are forbidden).
+  3. When there are no significant hints, answer with an empty string.
+
+  When answering, follow the format below:
+  ```text
+  Thought: ...(Fields mentioned in the context and their hints)...
+  Final Conclusion: ...(answer using JSON format, for example: {json_example})...
+  ```
+
+  Context:
+  ```text
+  {context}
+  ```
+
+  Question:
+  ```text
+  {query}
+  ```
+
+  Your Answer:
+
+template_format: f-string

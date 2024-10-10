@@ -10,7 +10,7 @@ from collections import defaultdict
 from lxml.cssselect import CSSSelector
 from functools import partial
 
-from feilian.html_constants import INTERACTIVE_ELEMENTS
+from feilian.html_constants import INTERACTIVE_ELEMENTS, INVISIBLE_ELEMENTS
 
 from feilian.text_tools import convert_html_to_text
 
@@ -177,6 +177,11 @@ def _clean_html(ele: etree._Element, deep=False):
 
     # 移除交互元素
     if ele.tag in INTERACTIVE_ELEMENTS:
+        _remove(ele)
+        return
+
+    # 移除 head
+    if ele.tag in INVISIBLE_ELEMENTS:
         _remove(ele)
         return
 
@@ -456,3 +461,96 @@ def extract_text_by_css_selector(tree: etree._Element, css_selector: str):
     results = [re.sub(r"  +", " ", x) for x in results]
 
     return results
+
+
+def get_xpath(ele):
+    xpath = ""
+    while ele is not None:
+        parent = ele.getparent()
+        if parent is None:
+            xpath = f"/{ele.tag}{xpath}"
+            break
+
+        part_str = ""
+        if ele.attrib:
+            parts = []
+            if "id" in ele.attrib:
+                parts.append(f"@id=\"{ele.attrib['id']}\"")
+            if "class" in ele.attrib:
+                parts.append(f"@class=\"{ele.attrib['class']}\"")
+            if parts:
+                part_str = "[" + " and ".join(parts) + "]"
+
+        idx = 1
+        for e in parent:
+            if e is ele:
+                break
+            if e.tag == ele.tag:
+                idx += 1
+
+        if idx == 1:
+            xpath = f"/{ele.tag}{part_str}{xpath}"
+        else:
+            xpath = f"/{ele.tag}{part_str}[{idx}]{xpath}"
+
+        ele = ele.getparent()
+
+    return xpath
+
+
+def itertext(ele):
+    idx = 1
+    tag = ele.tag
+    if not isinstance(tag, str) and tag is not None:
+        return
+    t = ele.text
+    if t:
+        yield (ele, t, idx)
+        idx += 1
+
+    for e in ele:
+        yield from itertext(e)
+        t = e.tail
+        if t:
+            yield (ele, t, idx)
+            idx += 1
+
+
+def gen_xpath_by_text(tree: etree._Element | etree._ElementTree, target_text: str):
+    root = tree
+    if isinstance(tree, etree._ElementTree):
+        root = tree.getroot()
+
+    results = []
+    for ele, text, idx in itertext(root):
+        if text.strip() is None:
+            continue
+
+        processed_text = html.unescape(html.unescape(text)).strip()
+        processed_text = re.sub(r"  +", " ", processed_text)
+
+        if target_text in processed_text:
+            results.append(
+                {
+                    "element": ele,
+                    "text_idx": idx,
+                    "target_text": target_text,
+                    "in_text": str(text),
+                }
+            )
+
+    if not results:
+        return None
+
+    results = sorted(results, key=lambda x: len(x["in_text"]) - len(x["target_text"]))
+    result = results[0]
+
+    xpath = get_xpath(result["element"])
+    xpath = f"{xpath}/text()"
+    if result["text_idx"] > 1:
+        xpath = f"{xpath}[{result['text_idx']}]"
+    result["xpath"] = xpath
+    del result["element"]
+    del result["text_idx"]
+
+    return result
