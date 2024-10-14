@@ -12,7 +12,7 @@ from functools import partial
 
 from feilian.html_constants import INTERACTIVE_ELEMENTS, INVISIBLE_ELEMENTS
 
-from feilian.text_tools import convert_html_to_text
+from feilian.text_tools import convert_html_to_text, normalize_text
 
 
 # A regex matching the "invalid XML character range"
@@ -359,8 +359,9 @@ def prune_by_xpath(
     if not is_in_path and not is_contained:
         include_parent = any([x.startswith(parent_xpath(xpath)) for x in includes])
         if include_parent:
-            ele.clear()
-            ele.text = ""
+            for child in ele.getchildren():
+                ele.remove(child)
+            ele.text = "..."
             return False
 
     return True
@@ -419,16 +420,9 @@ def extract_text_by_xpath(tree: etree._Element | etree._ElementTree, xpath: str)
     if not isinstance(xpath, str):
         return []
 
-    # replace all single quotes with double quotes
-    xpath = xpath.replace("'", '"')
-    # replace \" with '
-    xpath = xpath.replace('\\"', "'")
-
     results = []
     try:
-        for ele in tree.xpath(
-            xpath, namespaces={"re": "http://exslt.org/regular-expressions"}
-        ):
+        for ele in tree.xpath(xpath):
             if ele is None:
                 continue
             if isinstance(ele, str):
@@ -437,13 +431,12 @@ def extract_text_by_xpath(tree: etree._Element | etree._ElementTree, xpath: str)
                 results.append(convert_html_to_text(to_string(ele)))
     except Exception:
         print(f"Invalid xpath: {xpath}")
-        results = []
+        return [], True
 
-    results: List[str] = [html.unescape(x) for x in results]
+    results: List[str] = [normalize_text(x) for x in results]
     results = [x.strip() for x in results if x.strip()]
-    results = [re.sub(r"  +", " ", x) for x in results]
 
-    return results
+    return results, False
 
 
 def extract_text_by_css_selector(tree: etree._Element, css_selector: str):
@@ -451,7 +444,7 @@ def extract_text_by_css_selector(tree: etree._Element, css_selector: str):
         selector = CSSSelector(css_selector)
     except Exception:
         print(f"Invalid css selector: {css_selector}")
-        return []
+        return [], True
     elements = selector(tree)
 
     results: List[str] = [
@@ -460,10 +453,24 @@ def extract_text_by_css_selector(tree: etree._Element, css_selector: str):
     results = [x.strip() for x in results if x.strip()]
     results = [re.sub(r"  +", " ", x) for x in results]
 
-    return results
+    return results, False
 
 
-def get_xpath(ele):
+def get_predicates(ele: etree._Element, with_id=True, with_class=True):
+    part_str = ""
+    if ele.attrib:
+        parts = []
+        if with_id and "id" in ele.attrib:
+            parts.append(f"@id=\"{ele.attrib['id']}\"")
+        elif with_class and "class" in ele.attrib:
+            parts.append(f"@class=\"{ele.attrib['class']}\"")
+
+        if parts:
+            part_str = "[" + " and ".join(parts) + "]"
+    return part_str
+
+
+def get_xpath(ele, short=True, with_id=True, with_class=True):
     xpath = ""
     while ele is not None:
         parent = ele.getparent()
@@ -471,27 +478,27 @@ def get_xpath(ele):
             xpath = f"/{ele.tag}{xpath}"
             break
 
-        part_str = ""
-        if ele.attrib:
-            parts = []
-            if "id" in ele.attrib:
-                parts.append(f"@id=\"{ele.attrib['id']}\"")
-            if "class" in ele.attrib:
-                parts.append(f"@class=\"{ele.attrib['class']}\"")
-            if parts:
-                part_str = "[" + " and ".join(parts) + "]"
+        part_str = get_predicates(ele, with_id=with_id, with_class=with_class)
 
-        idx = 1
+        idx = 0
+        cur_idx = 0
         for e in parent:
-            if e is ele:
-                break
-            if e.tag == ele.tag:
+            if part_str and e.tag == ele.tag and get_predicates(e) == part_str:
                 idx += 1
+            elif not part_str and e.tag == ele.tag:
+                idx += 1
+
+            if e == ele:
+                cur_idx = idx
 
         if idx == 1:
             xpath = f"/{ele.tag}{part_str}{xpath}"
         else:
-            xpath = f"/{ele.tag}{part_str}[{idx}]{xpath}"
+            xpath = f"/{ele.tag}{part_str}[{cur_idx}]{xpath}"
+
+        if short and ele.attrib and "id" in ele.attrib:
+            xpath = "/" + xpath
+            break
 
         ele = ele.getparent()
 
@@ -516,20 +523,27 @@ def itertext(ele):
             idx += 1
 
 
-def gen_xpath_by_text(tree: etree._Element | etree._ElementTree, target_text: str):
+def gen_xpath_by_text(
+    tree: etree._Element | etree._ElementTree,
+    target_text: str,
+    text_suffix: bool = False,
+    short: bool = True,
+    with_id: bool = True,
+    with_class: bool = True,
+):
+    target_text = normalize_text(target_text)
+
     root = tree
     if isinstance(tree, etree._ElementTree):
         root = tree.getroot()
 
     results = []
     for ele, text, idx in itertext(root):
-        if text.strip() is None:
+        processed_text = normalize_text(text)
+        if not processed_text:
             continue
 
-        processed_text = html.unescape(html.unescape(text)).strip()
-        processed_text = re.sub(r"  +", " ", processed_text)
-
-        if target_text in processed_text:
+        if target_text in processed_text or processed_text in target_text:
             results.append(
                 {
                     "element": ele,
@@ -542,15 +556,22 @@ def gen_xpath_by_text(tree: etree._Element | etree._ElementTree, target_text: st
     if not results:
         return None
 
-    results = sorted(results, key=lambda x: len(x["in_text"]) - len(x["target_text"]))
-    result = results[0]
+    scores = [abs(len(x["in_text"]) - len(x["target_text"])) for x in results]
+    min_score = min(scores)
+    indices = [i for i, x in enumerate(scores) if x == min_score]
+    results = [results[i] for i in indices]
 
-    xpath = get_xpath(result["element"])
-    xpath = f"{xpath}/text()"
-    if result["text_idx"] > 1:
-        xpath = f"{xpath}[{result['text_idx']}]"
-    result["xpath"] = xpath
-    del result["element"]
-    del result["text_idx"]
+    xpaths = []
+    for result in results:
+        xpath = get_xpath(
+            result["element"], short=short, with_id=with_id, with_class=with_class
+        )
+        if text_suffix:
+            if result["text_idx"] > 1:
+                xpath = f"{xpath}/text()[{result['text_idx']}]"
+            else:
+                xpath = f"{xpath}/text()"
+        xpaths.append(xpath)
 
-    return result
+    print(f"Value {target_text} found in xpaths: {xpaths} ")
+    return xpaths

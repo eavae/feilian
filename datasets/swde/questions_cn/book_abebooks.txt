@@ -3,13 +3,15 @@
 - ISBN-13
 - 出版日期
 - 书名
+- 出版商
 
 答案格式示例：
 ```json
 {
-  "author": ["姓, 名"],
-  "isbn_13": ["ISBN-13号码"],
-  "publication_date": ["出版年份"],
-  "title": ["书名"]
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "title": ["..."],
+  "publisher": ["...]
 }
 ```

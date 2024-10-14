@@ -206,7 +206,7 @@ def rank_xpath_node(state, category: str, site: str):
         field_name = row["field_name"]
         xpath = row["xpath"]
         for snippet in state["snippets"]:
-            extracted = extract_fn(parse_html(snippet["raw_html"]), xpath)
+            extracted = extract_fn(parse_html(snippet["raw_html"]), xpath)[0]
             ground_truth = snippet["extracted"].get(field_name, [])
             tp, fp, fn = eval_array(extracted, ground_truth)
             true_positives += tp
