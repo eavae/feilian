@@ -1,5 +1,4 @@
 import tiktoken
-import json
 from typing_extensions import TypedDict
 from typing import List, Optional, Annotated, Dict
 from enum import Enum
@@ -7,7 +6,7 @@ from lxml import etree
 from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
 from feilian.chains.information_extraction_chain import (
-    hint_information_extraction_chain,
+    cued_information_extraction_chain,
 )
 from minify_html import minify
 from collections import defaultdict
@@ -136,20 +135,13 @@ def extract_fragments_node(state: FragmentDetectionState) -> FragmentDetectionSt
     }
 
 
-hint_example = {
-    "title": {"value": ["extracted title"], "hint_text": ""},
-    "phone": {"value": ["1234567890"], "hint_text": "电话号码"},
-}
-
-
 def detect_fragment_node(state: FragmentDetectionState) -> FragmentDetectionState:
     operator = state["ops"][0]
     if operator["text"] and operator["text"].strip():
-        data = hint_information_extraction_chain.invoke(
+        data = cued_information_extraction_chain.invoke(
             {
                 "context": operator["text"],
                 "query": state["query"],
-                "json_example": json.dumps(hint_example),
             }
         )
 

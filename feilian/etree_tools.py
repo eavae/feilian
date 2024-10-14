@@ -164,6 +164,13 @@ def _remove(element: etree._Element):
         p.remove(element)
 
 
+def _is_empty(ele: etree._Element):
+    is_no_text = ele.text is None or not ele.text.strip()
+    is_no_tail = ele.tail is None or not ele.tail.strip()
+    is_no_children = len(ele.getchildren()) == 0
+    return is_no_text and is_no_tail and is_no_children
+
+
 def _clean_html(ele: etree._Element, deep=False):
     # 移除非元素的节点
     if not isinstance(ele, etree._Element):
@@ -188,6 +195,11 @@ def _clean_html(ele: etree._Element, deep=False):
     if deep:
         # 移除图片
         if ele.tag == "img":
+            _remove(ele)
+            return
+
+        # 移除空白节点
+        if _is_empty(ele):
             _remove(ele)
             return
 
@@ -361,7 +373,10 @@ def prune_by_xpath(
         if include_parent:
             for child in ele.getchildren():
                 ele.remove(child)
-            ele.text = "..."
+            if ele.text:
+                ele.text = "..."
+            if ele.tail:
+                ele.tail = "..."
             return False
 
     return True
@@ -554,7 +569,7 @@ def gen_xpath_by_text(
             )
 
     if not results:
-        return None
+        return []
 
     scores = [abs(len(x["in_text"]) - len(x["target_text"])) for x in results]
     min_score = min(scores)
@@ -573,5 +588,4 @@ def gen_xpath_by_text(
                 xpath = f"{xpath}/text()"
         xpaths.append(xpath)
 
-    print(f"Value {target_text} found in xpaths: {xpaths} ")
     return xpaths

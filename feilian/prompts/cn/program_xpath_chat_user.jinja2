@@ -1,0 +1,20 @@
+Reading fowlling 3 HTML fragments with targetted values to be extracted, and then response a **single** Xpath (wrapped in JSON). 
+
+{% for snippet in snippets %}
+#### HTML Fragment {{ snippet.id }}:
+```html
+{{ snippet.html }}
+```
+{% if snippet['cue_text'] %}
+cue text: `{{ snippet.cue_text }}`
+cue text xpath (Auto generated, DO NOT COPY THIS):
+  {%- for xpath in snippet.cue_xpath %}
+  {{ loop.index }}. {{ xpath }}
+  {%- endfor %}
+{%- endif %}
+target value (JSON encoded): `{{ snippet.target_text | tojson }}`
+target xpath (Auto generated, DO NOT COPY THIS):
+  {%- for xpath in snippet.target_xpath %}
+  {{ loop.index }}. {{ xpath }}
+  {%- endfor %}
+{% endfor %}

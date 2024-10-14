@@ -13,7 +13,6 @@ from collections import defaultdict
 from feilian.agents.agent import (
     build_graph as build_program_xpath_graph,
     build_state,
-    rank_xpath_node,
 )
 from feilian.agents.fragments_detection_hint import (
     build_graph as build_fragment_detection_graph,
@@ -25,6 +24,7 @@ from feilian.etree_tools import (
     parse_html,
     extract_text_by_xpath,
     extract_text_by_css_selector,
+    normalize_text,
 )
 
 
@@ -47,61 +47,61 @@ def get_prompt(category: str, site: str):
     ).read()
 
 
-def normalize(text):
-    # print(text_list)
-    text = html.unescape(text)
-    text = text.replace("&lt;", "<")
-    text = text.replace("&gt;", ">")
-    text = text.replace("&amp;", "&")
-    text = text.replace("&quot;", '"')
-    text = text.replace("&#39;", "'").replace("&apos;", "'")
-    text = text.replace("&#150;", "–")
-    text = text.replace("&nbsp;", " ")
-    text = text.replace("&#160;", " ")
-    text = text.replace("&#039;", "'")
-    text = text.replace("&#34;", '"')
-    text = text.replace("&reg;", "®")
-    text = text.replace("&rsquo;", "’")
-    text = text.replace("&#8226;", "•")
-    text = text.replace("&ndash;", "–")
-    text = text.replace("&#x27;", "'")
-    text = text.replace("&#40;", "(")
-    text = text.replace("&#41;", ")")
-    text = text.replace("&#47;", "/")
-    text = text.replace("&#43;", "+")
-    text = text.replace("&#035;", "#")
-    text = text.replace("&#38;", "&")
-    text = text.replace("&eacute;", "é")
-    text = text.replace("&frac12;", "½")
-    text = text.replace("  ", " ")
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
-
-
-def program_xpath(candidates: Dict = None):
+def program_xpath(
+    candidates: Dict = None,
+    cache_dir: str = "./tmp/program_xpath",
+):
     df = pd.read_csv("data/swde_token_stats.csv")
 
     if not candidates:
         candidates = df[["category", "site"]].drop_duplicates().values.tolist()
 
+    # create cache dir if not exists
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir, exist_ok=True)
+
     dfs = []
     graph = build_program_xpath_graph()
-    for category, site in candidates:
-        random_state = 0
-        root_dir = "data/swde"
-        query = get_prompt(category, site)
+    random_state = 0
+    for category, site in tqdm.tqdm(candidates):
+        output_file = os.path.join(cache_dir, f"{category}_{site}.json")
+        if os.path.exists(output_file):
+            state = json.loads(open(output_file, "r").read())
+            for field_name, field_xpath in state["xpaths"].items():
+                dfs.append(
+                    {
+                        "category": category,
+                        "site": site,
+                        "field_name": field_name,
+                        "xpath": field_xpath,
+                    }
+                )
+            continue
 
         df_subset = df[(df["category"] == category) & (df["site"] == site)]
         df_subset = df_subset.sample(3, random_state=random_state)
 
-        files = [os.path.join(root_dir, x) for x in df_subset["file_path"]]
+        files = [os.path.join(DATA_ROOT, x) for x in df_subset["file_path"]]
         ids = [f"{category}_{site}_{i}" for i in df_subset["page_id"]]
-        state = build_state(files, query, ids=ids)
+        state = build_state(files, get_prompt(category, site), ids=ids)
+        state = graph.invoke(state)
 
-        state = graph.invoke(state, config={"configurable": {"thread_id": "1"}})
-        result_df = rank_xpath_node(state, category, site)
-        dfs.append(result_df)
-    df = pd.concat(dfs)
+        with open(output_file, "w") as f:
+            for snippet in state["snippets"]:
+                del snippet["raw_html"]
+            f.write(json.dumps(state, ensure_ascii=False, indent=4))
+
+        xpaths = state["xpaths"]
+        for field_name, field_xpath in xpaths.items():
+            dfs.append(
+                {
+                    "category": category,
+                    "site": site,
+                    "field_name": field_name,
+                    "xpath": field_xpath,
+                }
+            )
+    df = pd.DataFrame(dfs)
     return df
 
 
@@ -162,21 +162,15 @@ def detect_fragments(candidates: Dict = None):
                 f"{category}_{site}_{row['page_id']}",
             )
 
-            tree = parse_html(state["raw_html"])
-            clean_html(tree)
-
-            state = graph.invoke(state)
-
-            # with open(f"tests/data/hint_fragments/{state['id']}.json", "w") as f:
-            #     del state["raw_html"]
-            #     del state["ops"]
-            #     f.write(json.dumps(state, ensure_ascii=False, indent=4))
-            # state = json.loads(
-            #     open(
-            #         f"tests/data/hint_fragments/{row['category']}_{row['site']}_{row['page_id']}.json",
-            #         "r",
-            #     ).read()
-            # )
+            file_path = f"tests/data/hint_fragments/{state['id']}.json"
+            if not os.path.exists(file_path):
+                state = graph.invoke(state)
+                with open(file_path, "w") as f:
+                    del state["raw_html"]
+                    del state["ops"]
+                    f.write(json.dumps(state, ensure_ascii=False, indent=4))
+            else:
+                state = json.loads(open(file_path, "r").read())
 
             # tree = run_operators(tree, state["ops"])
             # html = to_string(tree)
@@ -230,7 +224,7 @@ def test_fragments():
             if any([x in html for x in values]):
                 continue
 
-            values = [normalize(x) for x in values]
+            values = [normalize_text(x) for x in values]
             if any([x in html for x in values]):
                 continue
             pass
@@ -238,7 +232,7 @@ def test_fragments():
 
 def run_xpath(file_path: str, xpaths: List[Dict]):
     raw_html = open(file_path, "r").read()
-    tree = parse_html(raw_html)
+    tree = parse_html(minify(raw_html, keep_closing_tags=True))
 
     extract_fn = (
         extract_text_by_xpath
@@ -247,7 +241,7 @@ def run_xpath(file_path: str, xpaths: List[Dict]):
     )
     data = defaultdict(list)
     for obj in xpaths:
-        data[obj["field_name"]] += extract_fn(tree, obj["xpath"])
+        data[obj["field_name"]] += extract_fn(tree, obj["xpath"])[0]
 
     return dict(data)
 
@@ -278,8 +272,8 @@ def eval_objects(predict, ground_truth):
     for field_name in set(predict.keys()) | set(ground_truth.keys()):
         ground_truth_values = ground_truth.get(field_name, [])
         predict_values = predict.get(field_name, [])
-        predict_values = [normalize(x) for x in predict_values]
-        ground_truth_values = [normalize(x) for x in ground_truth_values]
+        predict_values = [normalize_text(x) for x in predict_values]
+        ground_truth_values = [normalize_text(x) for x in ground_truth_values]
         tp, fp, fn = eval_array(predict_values, ground_truth_values)
         true_positives += tp
         false_positives += fp
@@ -288,7 +282,7 @@ def eval_objects(predict, ground_truth):
     return true_positives, false_positives, false_negatives
 
 
-def eval(xpath_df: pd.DataFrame, candidates=None):
+def eval(xpath_df: pd.DataFrame, candidates=None, sample_size=32):
     data_df = pd.read_csv("data/swde_token_stats.csv")
 
     if not candidates:
@@ -309,7 +303,7 @@ def eval(xpath_df: pd.DataFrame, candidates=None):
         ground_truth_df = data_df[
             (data_df["category"] == category) & (data_df["site"] == site)
         ]
-        ground_truth_df = ground_truth_df.sample(100, random_state=0)
+        ground_truth_df = ground_truth_df.sample(sample_size, random_state=0)
         xpath_df_subset = xpath_df[
             (xpath_df["category"] == category) & (xpath_df["site"] == site)
         ]
@@ -357,23 +351,6 @@ def eval(xpath_df: pd.DataFrame, candidates=None):
 
 if __name__ == "__main__":
     # from feilian.agents.fragments_detection_hint import ranking_node
-
-    # state = json.loads(open("temp.json", "r").read())
-    # ranking_node(state)
-
-    df = detect_fragments(
-        candidates=[
-            ("auto", "aol"),
-            ("auto", "autobytel"),
-            ("auto", "automotive"),
-            ("auto", "autoweb"),
-            ("auto", "carquotes"),
-            ("auto", "cars"),
-            ("auto", "kbb"),
-            ("auto", "motortrend"),
-            ("auto", "msn"),
-            ("auto", "yahoo"),
-        ]
-    )
-    # df.to_csv("swde_fragments.csv", index=False)
+    xpath_df = program_xpath()
+    df = eval(xpath_df)
     pass

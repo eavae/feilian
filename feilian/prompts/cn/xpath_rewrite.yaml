@@ -1,0 +1,44 @@
+input_variables:
+  - snippets
+template: |
+  Please read the following HTML code, and then return a **single** Xpath that can recognize the element in the HTML to extract `target value`. 
+
+  Here're some hints:
+  1. Do not output the xpath with exact value or element appears in the HTML.
+  2. Do not output the xpath that indicate multi node with different value. It would be appreciate to use more @class to identify different node that may share the same xpath expression.
+  3. Reference to the `target value` and the generated the xpath to get more context.
+  4. When using text predication , always using `contains(., 'value')` instead of `text()='value'`.
+  5. If the target xpath ends with `text()[n]`, where n is not 1, please do not ignore it.
+  6. If hint text exist, using hint text and hint xpath to compose a new xpath might be a better idea.
+  7. If multiple same meaning values are target value, select the most significant one.
+
+  ### Context
+
+  {% for snippet in snippets %}
+  #### HTML Fragment {{ loop.index }}:
+  ```html
+  {{ snippet.html }}
+  ```
+  {% if snippet['hint_text'] %}
+  hint text: `{{ snippet.hint_text }}`
+  hint text xpath (Auto generated, DO NOT COPY):
+    {%- for xpath in snippet.hint_xpath %}
+    {{ loop.index }}. {{ xpath }}
+    {%- endfor %}
+  {%- endif %}
+  target value (JSON encoded): `{{ snippet.target_text }}`
+  target xpath (Auto generated, DO NOT COPY THIS):
+    {%- for xpath in snippet.target_xpath %}
+    {{ loop.index }}. {{ xpath }}
+    {%- endfor %}
+  {%- endfor %}
+
+  Please answer in the following Json format:
+  {
+    "thought": "", # a brief thought of how to confirm the value and generate the xpath
+    "xpath": "" # a workable xpath to extract the value in the HTML
+  }
+
+  Your Answer:
+
+template_format: f-string

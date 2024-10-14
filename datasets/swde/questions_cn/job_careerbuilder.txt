@@ -3,8 +3,8 @@
 回答格式（JSON）：
 ```json
 {
-  "company": ["公司名称"],
-  "location": ["工作地点"],
-  "title": ["职位标题"]
+  "company": ["..."],
+  "location": ["..."],
+  "title": ["..."]
 }
 ```

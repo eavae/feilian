@@ -238,8 +238,8 @@ def remove_node_until(
 def extract_fragments_by_weight(
     tree: etree._ElementTree | etree._Element,
     tokenizer: Callable,
-    until_html_tokens: int = 2048,
-    max_text_tokens: int = 1024,
+    until_html_tokens: int = 16384,
+    max_text_tokens: int = 16384,
 ):
     token_tree: Node = build_token_tree(tree, tokenizer)
     while True:
@@ -253,7 +253,7 @@ def extract_fragments_by_weight(
             token_tree.max_width,
             token_tree.text_tokens,
             max_tokens=max_text_tokens,
-            min_tokens=max_text_tokens // 4,
+            min_tokens=max_text_tokens // 8,
         )
         node = token_tree.most_weighted_node
 

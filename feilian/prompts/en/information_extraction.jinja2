@@ -1,0 +1,20 @@
+According to the question, extract the required information from the given context and present the result in JSON format. The given context may be incomplete or may not contain the answer, so inference needs to be made based on the question. The JSON in the final conclusion exclude fields that are not mentioned in the context.
+
+Prioritize with following rules (in order):
+1. the container of the target text is fully encapsulated in tags, rather than in sentences.
+2. the container of the target text is more important in html's semantic.
+3. the container of the target text is closer to other fields in the context.
+
+# Question:
+{{ query }}
+
+# Context:
+```html
+{{ context }}
+```
+
+# Answer Format (ignore the format requirements in the `Question`):
+Thought: ...(Your thought, narrate the fields mentioned in the text and their locations)...
+Conclusion: ...(answer using JSON format, for example: {{ json_example | tojson }})...
+
+# Your Answer:

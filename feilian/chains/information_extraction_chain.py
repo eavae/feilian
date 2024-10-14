@@ -1,6 +1,7 @@
 import os
 import re
 import json_repair
+from operator import itemgetter
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
@@ -9,9 +10,9 @@ lang = os.environ.get("PROMPT_LANG", "cn")
 
 def json_parser(response):
     if lang == "cn":
-        json_str = response.content.split("最终结论:")[-1].strip()
+        json_str = response.content.split("结论:")[-1].strip()
     else:
-        json_str = response.content.split("Final Conclusion:")[-1].strip()
+        json_str = response.content.split("Conclusion:")[-1].strip()
 
     if json_str.startswith("```json"):
         json_str = json_str.split("```json")[1].strip()
@@ -22,17 +23,31 @@ def json_parser(response):
     return json_repair.repair_json(json_str, return_objects=True)
 
 
-def create_information_extraction_chain(hint=False):
-
+def create_information_extraction_chain(cue=False):
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
-    if hint:
-        template_file = f"feilian/prompts/{lang}/information_extraction_with_hint.yaml"
-        parser = json_parser
+    if cue:
+        template_file = f"feilian/prompts/{lang}/information_extraction_with_cue.jinja2"
+        example = {
+            "title": {"value": ["extracted title"], "cue_text": ""},
+            "phone": {"value": ["1234567890"], "cue_text": "电话号码"},
+        }
     else:
-        template_file = f"feilian/prompts/{lang}/information_extraction.yaml"
-        parser = json_parser
+        template_file = f"feilian/prompts/{lang}/information_extraction.jinja2"
+        example = {
+            "title": ["extracted title 1", "extracted title 2"],
+            "phone": ["1234567890"],
+        }
 
-    return PromptTemplate.from_file(template_file) | llm | parser
+    return (
+        {
+            "query": itemgetter("query"),
+            "context": itemgetter("context"),
+            "json_example": lambda _: example,
+        }
+        | PromptTemplate.from_file(template_file, template_format="jinja2")
+        | llm
+        | json_parser
+    )
 
 
 def _create_best_composition_chain():
@@ -57,4 +72,4 @@ def _create_best_composition_chain():
 
 best_composition_chain = _create_best_composition_chain()
 information_extraction_chain = create_information_extraction_chain()
-hint_information_extraction_chain = create_information_extraction_chain(hint=True)
+cued_information_extraction_chain = create_information_extraction_chain(cue=True)

@@ -1,0 +1,12 @@
+Following the feedbacks to refine the xpath you provided:
+
+1. Extend the xpath to include the missing information if `Missing`.
+2. Restrict the xpath to exclude the irrelevant information if `Surplus`.
+3. Correct the xpath grammer if `Invalid`.
+4. Response same xpath if no better solution.
+
+{% for feedback in feedbacks %}
+#### Evaluated on Fragment {{ feedback.id }}:
+Extracted (JSON encoded): `{{ feedback.extracted | tojson }}`
+Feedback Message: `{{ feedback.message }}`
+{%- endfor %}

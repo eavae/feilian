@@ -1,0 +1,29 @@
+input_variables:
+  - snippets
+template: |
+  你是专业的前端工程师，你需要将用于提取目标文本的多个XPath表达式（由程序生成，不完全准确，依据你的专业知识甄别）重写为一个更可读、更泛用、更简洁的形式。
+
+  ### 规则:
+  1. 善用你的专业知识，在不影响正确性的前提下，进行**极度**的精简，仅保留最具有价值的部分，以便使其通用、易读。
+  2. 善于利用语义化的标签、ID、class等属性，大胆猜测，合理推断，并进行简化。
+  3. 移除没有语义的class名称，仅保留有语义的部分使用`contains`重写。
+  4. 当多个片段中有不一致的地方，寻找到一个通用的XPath，或编写一个更符合直觉的XPath。
+  5. 目标XPath若以text()[n]结尾，其中的n表示第n个文本节点，若不是1时，请不要忽略。
+
+  ### 上下文
+  {% for snippet in snippets %}
+  片段{{loop.index}}:
+  {% if snippet['hint_text'] %}
+  提示文本: `{{ snippet.hint_text }}`
+  提示文本XPath: `{{ snippet.hint_xpath }}`
+  {%- endif %}
+  目标文本(经JSON编码): `{{ snippet.target_text }}`
+  目标XPath: `{{ snippet.target_xpath }}`
+  {%- endfor %}
+
+  回答时，严格遵循如下格式：
+  最终结论: `...(目标 XPath)...`
+
+  回答如下:
+
+template_format: f-string
