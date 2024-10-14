@@ -49,22 +49,41 @@ def get_prompt(category: str, site: str):
 
 def program_xpath(
     candidates: Dict = None,
-    cache_dir: str = "./tmp/program_xpath",
+    load_extraction_from: str = None,
+    save_to_dir: str = "./tmp/program_xpath",
 ):
+    """
+
+    Args:
+        candidates (Dict, optional): _description_. Defaults to None.
+        load_extraction_from (str, optional): useful when doing ablation experiment. We can load information extracted state so to skip it, save time. Defaults to None.
+        save_to_dir (str, optional): _description_. Defaults to "./tmp/program_xpath".
+
+    Returns:
+        _type_: _description_
+    """
     df = pd.read_csv("data/swde_token_stats.csv")
 
     if not candidates:
         candidates = df[["category", "site"]].drop_duplicates().values.tolist()
 
     # create cache dir if not exists
-    if not os.path.exists(cache_dir):
-        os.makedirs(cache_dir, exist_ok=True)
+    if not os.path.exists(save_to_dir):
+        os.makedirs(save_to_dir, exist_ok=True)
+
+    if load_extraction_from and not os.path.exists(load_extraction_from):
+        raise FileNotFoundError(f"file {load_extraction_from} not found, please check")
+
+    if not load_extraction_from:
+        load_extraction_from = save_to_dir
 
     dfs = []
     graph = build_program_xpath_graph()
     random_state = 0
     for category, site in tqdm.tqdm(candidates):
-        output_file = os.path.join(cache_dir, f"{category}_{site}.json")
+        output_file = os.path.join(save_to_dir, f"{category}_{site}.json")
+        load_file = os.path.join(load_extraction_from, f"{category}_{site}.json")
+
         if os.path.exists(output_file):
             state = json.loads(open(output_file, "r").read())
             for field_name, field_xpath in state["xpaths"].items():
@@ -81,9 +100,28 @@ def program_xpath(
         df_subset = df[(df["category"] == category) & (df["site"] == site)]
         df_subset = df_subset.sample(3, random_state=random_state)
 
-        files = [os.path.join(DATA_ROOT, x) for x in df_subset["file_path"]]
-        ids = [f"{category}_{site}_{i}" for i in df_subset["page_id"]]
-        state = build_state(files, get_prompt(category, site), ids=ids)
+        if os.path.exists(load_file):
+            state = json.loads(open(load_file, "r").read())
+
+            # add raw html
+            for snippet in state["snippets"]:
+                category, site, page_id = snippet["id"].split("_")
+                df_row = df_subset[
+                    (df_subset["category"] == category)
+                    & (df_subset["site"] == site)
+                    & (df_subset["page_id"] == int(page_id))
+                ].iloc[0]
+                snippet["raw_html"] = open(
+                    os.path.join(DATA_ROOT, df_row["file_path"]), "r"
+                ).read()
+
+            # remove xpath
+            state["xpaths"] = {}
+        else:
+            files = [os.path.join(DATA_ROOT, x) for x in df_subset["file_path"]]
+            ids = [f"{category}_{site}_{i}" for i in df_subset["page_id"]]
+            state = build_state(files, get_prompt(category, site), ids=ids)
+
         state = graph.invoke(state)
 
         with open(output_file, "w") as f:
@@ -350,7 +388,9 @@ def eval(xpath_df: pd.DataFrame, candidates=None, sample_size=32):
 
 
 if __name__ == "__main__":
-    # from feilian.agents.fragments_detection_hint import ranking_node
-    xpath_df = program_xpath()
+    xpath_df = program_xpath(
+        load_extraction_from="tmp/program_xpath",
+        save_to_dir="tmp/program_xpath_wo_q",
+    )
     df = eval(xpath_df)
     pass

@@ -1,6 +1,7 @@
 import hashlib
 import warnings
 import json
+import os
 from typing import List, Annotated, Dict, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
@@ -27,11 +28,6 @@ from feilian.chains.program_xpath_chat import (
 )
 
 warnings.filterwarnings(action="ignore", category=DataLossWarning, module=r"html5lib")
-
-PROGRAM_FRAGMENTS = 2
-PROGRAM_TYPE = "xpath"
-
-fix_chain_state = []
 
 
 class Snippet(TypedDict):
@@ -60,7 +56,7 @@ def information_extraction_node(state: State) -> State:
 
     # skip if data already exists
     if snippet.get("data"):
-        return state
+        return dict(snippets=[snippet])
 
     html = snippet["raw_html"]
     tree = parse_html(html)
@@ -151,7 +147,7 @@ def get_feedbacks(snippets, field_name, field_xpath, trees):
 
 
 def select_best_xpath(tried_xpaths):
-    # filter invalid xpaths
+    # filter out invalid xpaths
     valid_xpaths = [
         (xpath, feedbacks)
         for xpath, feedbacks in tried_xpaths
@@ -159,9 +155,18 @@ def select_best_xpath(tried_xpaths):
     ]
     if len(valid_xpaths) == 0:
         return tried_xpaths[0][0]
-
     if len(valid_xpaths) == 1:
         return valid_xpaths[0][0]
+
+    # filter out empty extracted
+    tried_xpaths = valid_xpaths
+    valid_xpaths = [
+        (xpath, feedbacks)
+        for xpath, feedbacks in valid_xpaths
+        if all(f["extracted"] for f in feedbacks)
+    ]
+    if len(valid_xpaths) == 0:
+        return tried_xpaths[0][0]
 
     # sort by extracted count (from least to most)
     valid_xpaths = sorted(
@@ -213,6 +218,8 @@ def program_xpath_node(state: State):
             continue
 
         cue_text = field_object["cue_text"]
+        if os.environ.get("ABLATION_EXPERIMENT", None) == "WITHOUT_CUE":
+            cue_text = None
         if cue_text:
             cue_xpath = gen_xpath_by_text(tree, cue_text, **infer_xpath_kwargs)
             if cue_xpath:
@@ -239,7 +246,7 @@ def program_xpath_node(state: State):
         )
 
     if not html_snippets:
-        return dict()
+        return dict(xpaths={field_name: None})
 
     base_input = format_snippets(html_snippets)
     session_id = "_".join([snippet["id"] for snippet in state["snippets"]])
@@ -263,6 +270,9 @@ def program_xpath_node(state: State):
         feedbacks = get_feedbacks(state["snippets"], field_name, field_xpath, trees)
         tried_xpaths.append((field_xpath, feedbacks))
         max_iter -= 1
+
+    if max_iter == 0:
+        field_xpath = select_best_xpath(tried_xpaths)
 
     return {
         "xpaths": {field_name: field_xpath},

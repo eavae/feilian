@@ -5,7 +5,6 @@ Reading fowlling 3 HTML fragments with targetted values to be extracted, and the
 ```html
 {{ snippet.html }}
 ```
-{% if snippet['cue_text'] %}
 target value (JSON encoded): `{{ snippet.target_text | tojson }}`
 target xpath (Auto generated, DO NOT COPY THIS):
   {%- for xpath in snippet.target_xpath %}

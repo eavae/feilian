@@ -13,19 +13,31 @@ from langchain_openai import ChatOpenAI
 lang = os.environ.get("PROMPT_LANG", "cn")
 
 program_xpath_chat_system = PromptTemplate.from_file(
-    "feilian/prompts/cn/program_xpath_chat_system.jinja2",
+    "feilian/prompts/en/program_xpath_chat_system.jinja2",
     template_format="jinja2",
 )
 
 program_xpath_chat_user = PromptTemplate.from_file(
-    "feilian/prompts/cn/program_xpath_chat_user.jinja2",
+    "feilian/prompts/en/program_xpath_chat_user.jinja2",
     template_format="jinja2",
 )
 
-program_xpath_chat_feedback = PromptTemplate.from_file(
-    "feilian/prompts/cn/program_xpath_chat_feedback.jinja2",
-    template_format="jinja2",
-)
+ablation_exp = os.environ.get("ABLATION_EXPERIMENT", None)
+if ablation_exp == "WITHOUT_CUE":
+    program_xpath_chat_feedback = PromptTemplate.from_file(
+        "feilian/prompts/en/program_xpath_chat_user_wo_q.jinja2",
+        template_format="jinja2",
+    )
+elif ablation_exp == "WITHOUT_GEN_XPATH":
+    program_xpath_chat_feedback = PromptTemplate.from_file(
+        "feilian/prompts/en/program_xpath_chat_user_wo_gx.jinja2",
+        template_format="jinja2",
+    )
+else:
+    program_xpath_chat_feedback = PromptTemplate.from_file(
+        "feilian/prompts/en/program_xpath_chat_feedback.jinja2",
+        template_format="jinja2",
+    )
 
 
 def format_snippets(snippets):
@@ -75,10 +87,12 @@ def create_program_xpath_chat_chain():
             return result
         elif isinstance(result, list) and result and isinstance(result[0], str):
             return result[0]
+        elif not isinstance(result, dict):
+            return ""
         return result.get("xpath", "")
 
     llm = ChatOpenAI(
-        model=os.getenv("OPENAI_MODEL"),
+        model=os.getenv("OPENAI_PROGRAM_XPATH_MODEL"),
         temperature=0,
         max_tokens=512,
     )

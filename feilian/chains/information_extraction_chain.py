@@ -24,7 +24,7 @@ def json_parser(response):
 
 
 def create_information_extraction_chain(cue=False):
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
+    llm = ChatOpenAI(model=os.getenv("OPENAI_IE_MODEL"), temperature=0)
     if cue:
         template_file = f"feilian/prompts/{lang}/information_extraction_with_cue.jinja2"
         example = {
