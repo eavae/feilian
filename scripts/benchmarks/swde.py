@@ -66,16 +66,17 @@ def program_xpath(
 
     if not candidates:
         candidates = df[["category", "site"]].drop_duplicates().values.tolist()
-
-    # create cache dir if not exists
-    if not os.path.exists(save_to_dir):
-        os.makedirs(save_to_dir, exist_ok=True)
-
+    
+    # 如果 load_extraction_from 不存在，也为它创建文件夹
     if load_extraction_from and not os.path.exists(load_extraction_from):
-        raise FileNotFoundError(f"file {load_extraction_from} not found, please check")
-
+        os.makedirs(load_extraction_from, exist_ok=True)
+    
     if not load_extraction_from:
         load_extraction_from = save_to_dir
+
+    # 创建 save_to_dir 文件夹
+    if not os.path.exists(save_to_dir):
+        os.makedirs(save_to_dir, exist_ok=True)
 
     dfs = []
     graph = build_program_xpath_graph()
