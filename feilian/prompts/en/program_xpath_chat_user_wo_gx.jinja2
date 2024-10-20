@@ -5,5 +5,8 @@ Reading fowlling 3 HTML fragments with targetted values to be extracted, and the
 ```html
 {{ snippet.html }}
 ```
+{% if snippet['cue_text'] %}
+cue text: `{{ snippet.cue_text }}`
+{%- endif %}
 target value (JSON encoded): `{{ snippet.target_text | tojson }}`
 {% endfor %}
