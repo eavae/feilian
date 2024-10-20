@@ -10,6 +10,9 @@ from minify_html import minify
 from typing import Dict, List
 from collections import defaultdict
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from feilian.agents.agent import (
     build_graph as build_program_xpath_graph,
     build_state,
