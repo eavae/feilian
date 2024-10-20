@@ -17,27 +17,28 @@ program_xpath_chat_system = PromptTemplate.from_file(
     template_format="jinja2",
 )
 
-program_xpath_chat_user = PromptTemplate.from_file(
-    "feilian/prompts/en/program_xpath_chat_user.jinja2",
-    template_format="jinja2",
-)
 
 ablation_exp = os.environ.get("ABLATION_EXPERIMENT", None)
 if ablation_exp == "WITHOUT_CUE":
-    program_xpath_chat_feedback = PromptTemplate.from_file(
+    program_xpath_chat_user = PromptTemplate.from_file(
         "feilian/prompts/en/program_xpath_chat_user_wo_q.jinja2",
         template_format="jinja2",
     )
 elif ablation_exp == "WITHOUT_GEN_XPATH":
-    program_xpath_chat_feedback = PromptTemplate.from_file(
+    program_xpath_chat_user = PromptTemplate.from_file(
         "feilian/prompts/en/program_xpath_chat_user_wo_gx.jinja2",
         template_format="jinja2",
     )
 else:
-    program_xpath_chat_feedback = PromptTemplate.from_file(
-        "feilian/prompts/en/program_xpath_chat_feedback.jinja2",
+    program_xpath_chat_user = PromptTemplate.from_file(
+        "feilian/prompts/en/program_xpath_chat_user.jinja2",
         template_format="jinja2",
     )
+
+program_xpath_chat_feedback = PromptTemplate.from_file(
+    "feilian/prompts/en/program_xpath_chat_feedback.jinja2",
+    template_format="jinja2",
+)
 
 
 def format_snippets(snippets):
@@ -92,7 +93,7 @@ def create_program_xpath_chat_chain():
         return result.get("xpath", "")
 
     llm = ChatOpenAI(
-        model=os.getenv("OPENAI_PROGRAM_XPATH_MODEL"),
+        model=os.getenv("OPENAI_PROGRAM_XPATH_MODEL", "deepseek-chat"),
         temperature=0,
         max_tokens=512,
     )

@@ -418,6 +418,9 @@ def apply_trim_rules(root: etree._Element, rules: List[str]):
 def extraction_based_pruning(
     tree: etree._Element | etree._ElementTree, includes: List[dict]
 ):
+    """
+    prune tree nodes except includes
+    """
     pre_order_traversal(
         tree,
         lambda ele, xpath: prune_by_xpath(ele, xpath, includes=includes),
