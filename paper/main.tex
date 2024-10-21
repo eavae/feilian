@@ -1,169 +1,178 @@
-\documentclass{article}
-
-\usepackage{ml4cps}
-
-\usepackage[utf8]{inputenc} % allow utf-8 input
-\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
-\usepackage{hyperref}       % hyperlinks
-\usepackage{url}            % simple URL typesetting
-\usepackage{booktabs}       % professional-quality tables
-\usepackage{amsfonts}       % blackboard math symbols
-\usepackage{nicefrac}       % compact symbols for 1/2, etc.
-\usepackage{microtype}      % microtypography
-\usepackage{cleveref}       % smart cross-referencing
-\usepackage{lipsum}         % Can be removed after putting your text content
+\documentclass[a4paper]{article}
 \usepackage{graphicx}
-\usepackage{natbib}
-\usepackage{doi}
+\usepackage{twocolceurws}
 
-\title{\large FEC: A Fast and Efficient LLM Based Web Crawler Agent for Large Scale Web Data Extraction}
+\title{XPath Agent: An Efficient XPath Programming Agent Based on LLM for Web Crawler}
 
-\date{2024-12-12}
-
-\newif\ifuniqueAffiliation
-\uniqueAffiliationtrue
-
-\ifuniqueAffiliation % Standard variant of author block
 \author{
-	\hspace{1mm}Li Yu\\
-	\\
-	\texttt{lijingyu68@mail.com} \\
-	%% Author 2
-	\And
-	\hspace{1mm} Author 2\\
-	\\
-	\texttt{exmaple@mail.com} \\
-	%% Author 3
-	\And
-	\hspace{1mm} Author 3\\
-	\\
-	\texttt{exmaple@mail.com} \\
+Li Yu \\ \\ \\ lijingyu68@gmail.com
+\and
+Wang Jixing \\ Science Dept.\\
+                Online City, CEUR 99099 \\ jqq@ceur-ws.org
+\and
+Hazul \\ Research Dept.\\
+                Science City, Sci 88088 \\ yvo@science.rdept.net
 }
-\else
-% Multiple affiliations variant of author block
-\usepackage{authblk}
-\renewcommand\Authfont{\bfseries}
-\setlength{\affilsep}{0em}
-% box is needed for correct spacing with authblk
-\author[1]{%
-	\href{https://orcid.org/0000-0000-0000-0000}{\usebox{\orcid}\hspace{1mm}First author}%
-}
-\author[1,2]{%
-	\href{https://orcid.org/0000-0000-0000-0000}{\usebox{\orcid}\hspace{1mm}Second author}%
-}
-\affil[1]{Affiliation, Address}
-\affil[2]{Affiliation, Address}
-\fi
 
-\renewcommand{\shorttitle}{Contribution for ML4CPS 2024}
+\institution{}
 
-%%% Add PDF metadata to help others organize their library
-%%% Once the PDF is generated, you can check the metadata with
-%%% $ pdfinfo template.pdf
-\hypersetup{
-pdftitle={contribution title},
-pdfsubject={contribution subject},
-pdfauthor={First author, Second author},
-pdfkeywords={First keyword, Second keyword, Third keyword},
-}
 
 \begin{document}
-
 \maketitle
 
 \begin{abstract}
-	\lipsum[1]
+We introduce XPath Agent, a production-ready XPath programming agent tailored for web crawling tasks. A standout feature of XPath Agent is its capability to automatically program XPath queries from a set of sampled web pages. To illustrate its efficacy, we benchmark XPath Agent against a state-of-the-art XPath programming agent across a suite of web crawling tasks. Our findings reveal that XPath Agent excels in F1 score with minimal compromise on accuracy, while significantly reducing token usage. The well designed 2 stage pipelines makes it readily integrable into existing web crawling workflows, thereby saving time and effort in manual XPath query development.
 \end{abstract}
 
 
-% add keywords
-\keywords{First keyword \and Second keyword \and More}
-
-
 \section{Introduction}
-\lipsum[2]
-\lipsum[3]
 
+...
 
-\section{Headings: first level}
-\label{sec:headings}
+\section{Related Work}
 
-\lipsum[4] See Section \ref{sec:headings}.
+...
 
-\subsection{Headings: second level}
-\lipsum[5]
-\begin{equation}
-	\xi _{ij}(t)=P(x_{t}=i,x_{t+1}=j|y,v,w;\theta)= {\frac {\alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}{\sum _{i=1}^{N} \sum _{j=1}^{N} \alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}}
-\end{equation}
+\section{Methodology}
 
-\subsubsection{Headings: third level}
-\lipsum[6]
+...
 
-\paragraph{Paragraph}
-\lipsum[7]
+\subsection{ Information Extraction }
 
+...
 
+\subsection{ XPath Program }
 
-\section{Examples of citations, figures, tables, references}
-\label{sec:others}
+...
 
-\subsection{Citations}
-Here is an example how to do citations: Article \cite{ref_article}, book \cite{ref_book}, proceedings \cite{ref_proc}, url  \cite{ref_url}. 
+\section{ Experiments }
 
-\subsection{Figures}
-\lipsum[10]
-See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
-\lipsum[11]
+...
 
-\begin{figure}
-	\centering
-	\fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-	\caption{Sample figure caption.}
-	\label{fig:fig1}
+\section{ Conclusion }
+
+Third level headings must be flush left, initial caps and bold.
+One line space before the third level heading and $1/2$ line
+space after the third level heading.
+
+\paragraph{Fourth Level Heading}
+
+Fourth level headings must be flush left, initial caps and roman type.
+One line space before the fourth level heading and $1/2$ line
+space after the fourth level heading.
+
+\subsection{Citations In Text}
+
+Citations within the text should indicate the author's last name and
+year\cite{Knuth-vol3}. Reference style\cite{Comer-btree}
+should follow the style that you are used to using, as long as the
+citation style is consistent.
+
+\subsubsection{Footnotes}
+
+Indicate footnotes with a number\footnote{This is a sample footnote} in
+the text. Place the footnotes at the bottom of the page they appear on.
+Precede the footnote with a vertical rule of 2 inches (12 picas).
+
+\subsubsection{Figures}
+
+All artwork must be centered, neat, clean and legible. Do not use pencil
+or hand-drawn artwork. Figure number and caption always appear after the
+the figure. Place one line space before the figure, one line space
+before the figure caption and one line space after the figure caption.
+The figure caption is initial caps and each figure is numbered
+consecutively.
+
+Make sure that the figure caption does not get separated from the
+figure. Leave extra white space at the bottom of the page to avoid
+splitting the figure and figure caption.
+
+Figure \ref{fig1} shows how to include a figure as encapsulated postscript.
+The source of the figure is in file {\tt fig1.eps}.
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[height=4cm]{fig1}
+\caption{Sample EPS figure }
+\label{fig1}
+\end{center}
 \end{figure}
 
-\subsection{Tables}
-See awesome Table~\ref{tab:table}.
+Below is another figure using LaTeX commands.
 
 
-\begin{table}
-	\caption{Sample table title}
-	\centering
-	\begin{tabular}{lll}
-		\toprule
-		\multicolumn{2}{c}{Part}                   \\
-		\cmidrule(r){1-2}
-		Name     & Description     & Size ($\mu$m) \\
-		\midrule
-		Dendrite & Input terminal  & $\sim$100     \\
-		Axon     & Output terminal & $\sim$10      \\
-		Soma     & Cell body       & up to $10^6$  \\
-		\bottomrule
-	\end{tabular}
-	\label{tab:table}
+\begin{figure}[ht]
+\begin{center}
+\setlength{\unitlength}{1pt}
+\footnotesize
+\begin{picture}(160,80)
+        \put(0,0){\framebox(160,80)[]{}}
+        \put(10,35){\framebox(80,40){}}
+        \put(100,20){\framebox(40,20){}}
+        \put(70,10){\framebox(20,10){}}
+        \put(20,5){\framebox(10,5){}}
+\end{picture}
+\caption{Sample Figure Caption}
+\end{center}
+\end{figure}
+
+\subsubsection{Tables}
+
+All tables must be centered, neat, clean and legible. Do not use pencil
+or hand-drawn tables. Table number and title always appear before the
+table.
+
+One line space before the table title, one line space after the table
+title and one line space after the table. The table title must be
+initial caps and each table numbered consecutively.
+
+\begin{table}[ht]
+\begin{center}
+\caption{Sample Table}
+
+\bigskip
+
+\begin{tabular}{|l|l|r|}
+\hline
+A & B & 1\\ \hline
+C & D & 2\\
+E & F & 3\\ \hline
+\end{tabular}
+\end{center}
 \end{table}
 
-\subsection{Lists}
-\begin{itemize}
-	\item Lorem ipsum dolor sit amet
-	\item consectetur adipiscing elit.
-\end{itemize}
 
-\section*{Acknowledgments}
-Add acknowledgments
+\subsubsection{Handling References}
 
-\bibliographystyle{abbrv}
-%\bibliography{references}  %%% Uncomment this line and comment out the ``thebibliography'' section below to use the external .bib file (using bibtex) .
+Use a first level heading for the references. References follow the
+acknowledgements.
 
 
-%%% Uncomment this section and comment out the \bibliography{references} line above to use inline references.
-\begin{thebibliography}{99.}
-	\bibitem{ref_article}Author, F.: Article title. Journal \textbf{2}(5), 99--110 (2016)
-	\bibitem{ref_book}Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,Location (1999)
-	\bibitem{ref_proc}Author, A.-B.: Contribution title. In: 9th International Proceedings on Proceedings, pp. 1--2. Publisher, Location (2010)
-	\bibitem{ref_url} ML4CPS Homepage, \url{https://www.hsu-hh.de/imb/en/ml4cps}. Last accessed 19 Sep 2023
+\subsubsection{Acknowledgements}
+
+Use a third level heading for the acknowledgements. All acknowledgements
+go at the end of the paper.
+
+
+
+
+%\bibliographystyle{alpha} 
+%\bibliography{samplebib}
+%inline the .bbl file directly for mailing to authors.
+
+\begin{thebibliography}{Com79}
+
+\bibitem[Com79]{Comer-btree}
+D.~Comer.
+\newblock The ubiquitous b-tree.
+\newblock {\em Computing Surveys}, 11(2):121--137, June 1979.
+
+\bibitem[Knu73]{Knuth-vol3}
+D.~E. Knuth.
+\newblock {\em The Art of Computer Programming -- Volume 3 / Sorting and
+  Searching}.
+\newblock Addison-Wesley, 1973.
+
 \end{thebibliography}
-
-
 
 \end{document}
