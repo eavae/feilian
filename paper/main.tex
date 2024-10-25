@@ -24,34 +24,34 @@ We introduce XPath Agent, a production-ready XPath programming agent tailored fo
 \end{abstract}
 
 
-\section{1 Introduction}
+\section{Introduction}
 
 ...
 
-\section{2 Related Work}
-\subsection{2.1 LLMs and Direct Webpage Information Extraction}
+\section{Related Work}
+\subsection{LLMs and Direct Webpage Information Extraction}
 Large Language Models (LLMs) have demonstrated remarkable abilities in replicating human-like task execution, particularly in web data extraction. Recent advancements have enabled LLMs to process entire web pages post-crawling, facilitating direct extraction of structured information such as product details and prices. This method capitalizes on the LLMs' capabilities to interpret complex HTML structures without manual rule-based configurations, enhancing adaptability across dynamic web environments (Ahluwalia et al., 2024). However, challenges remain, particularly in ensuring factual accuracy and avoiding excessive reliance on large, computationally intensive models (Xu et al., 2024). Despite these hurdles, this approach offers a promising alternative to traditional web scraping, as demonstrated by models like NeuScraper, which achieve improved accuracy by integrating neural networks for direct HTML text extraction (Xu et al., 2024).
-\subsection{2.2 LLMs and Webpage Content Simplification}
+\subsection{LLMs and Webpage Content Simplification}
 An alternative approach to direct information extraction involves simplifying web content through LLMs before targeting specific data points. This method filters out redundant HTML elements, reducing the size and complexity of web data while retaining the relevant information for extraction. By employing techniques such as chunking and semantic classification, LLMs like those used in RAG models can focus on high-value segments, improving processing efficiency (Ahluwalia & Wani, 2024) Studies have shown that simplifying web pages using LLMs significantly enhances their performance in dynamic environments, especially when dealing with varied and noisy HTML structures (Deng et al., 2023). Moreover, this approach aligns with efforts to reduce the cognitive load on models, particularly in contexts requiring rapid, scalable information extraction (Sàrl and Godin, 2023).
-\subsection{2.3 LLMs and XPaths for Information Extraction}
+\subsection{LLMs and XPaths for Information Extraction}
 Generating generalizable XPath queries using LLMs has emerged as a robust method for automating web information extraction across structurally similar websites. This approach leverages LLMs’ understanding of document structures to create XPath queries that dynamically adapt to minor variations in web page layouts, increasing the scalability of extraction systems. Tools like TREEX, which integrate decision tree learning, allow for the synthesis of XPaths that balance precision and recall across multiple web pages, even those with unseen structures (Omari et al., 2024). This technique significantly reduces the need for manual intervention and facilitates the creation of highly efficient and reusable extractors for tasks such as price comparison and product aggregation across e-commerce platforms (Huang et al., 2024). 
-\section{3 Methodology}
+\section{Methodology}
 
 ...
 
-\subsection{3.1 Information Extraction }
+\subsection{Information Extraction }
 
 ...
 
-\subsection{3.2 XPath Program }
+\subsection{XPath Program }
 
 ...
 
-\section{4 Experiments }
+\section{Experiments }
 
 ...
 
-\section{5 Conclusion }
+\section{Conclusion }
 
 Third level headings must be flush left, initial caps and bold.
 One line space before the third level heading and $1/2$ line
