@@ -20,13 +20,13 @@ Hazul \\ Research Dept.\\
 \maketitle
 
 \begin{abstract}
-We introduce XPath Agent, a production-ready XPath programming agent tailored for web crawling tasks. A standout feature of XPath Agent is its capability to automatically program XPath queries from a set of sampled web pages. To illustrate its efficacy, we benchmark XPath Agent against a state-of-the-art XPath programming agent across a suite of web crawling tasks. Our findings reveal that XPath Agent excels in F1 score with minimal compromise on accuracy, while significantly reducing token usage. The well designed 2 stage pipelines makes it readily integrable into existing web crawling workflows, thereby saving time and effort in manual XPath query development.
+We introduce XPath Agent, a production-ready XPath programming agent tailored for web crawling tasks. A standout feature of XPath Agent is its capability to automatically program XPath queries from a set of sampled web pages. To illustrate its efficacy, we benchmark XPath Agent against a state-of-the-art XPath programming agent across a suite of web crawling tasks. Our findings reveal that XPath Agent excels in F1 score with minimal compromise on accuracy, while significantly reducing token usage and increase clock-time efficiency. The well designed 2 stage pipelines makes it readily integrable into existing web crawling workflows, thereby saving time and effort in manual XPath query development.
 \end{abstract}
 
 
 \section{Introduction}
 
-...
+Web scraping \cite{khder2021web} automates data extraction from websites, vital for modern fields like Business Intelligence. It excels in gathering structured data from unstructured sources like HTML, especially when machine-readable formats are unavailable. Web scraping provides real-time data, such as pricing from retail sites, and can offer insights into illicit activities like darknet drug markets.
 
 \section{Related Work}
 \subsection{LLMs and Direct Webpage Information Extraction}
@@ -158,23 +158,8 @@ go at the end of the paper.
 
 
 
-%\bibliographystyle{alpha} 
-%\bibliography{samplebib}
-%inline the .bbl file directly for mailing to authors.
+\bibliographystyle{plain} 
+\bibliography{refs}
 
-\begin{thebibliography}{Com79}
-
-\bibitem[Com79]{Comer-btree}
-D.~Comer.
-\newblock The ubiquitous b-tree.
-\newblock {\em Computing Surveys}, 11(2):121--137, June 1979.
-
-\bibitem[Knu73]{Knuth-vol3}
-D.~E. Knuth.
-\newblock {\em The Art of Computer Programming -- Volume 3 / Sorting and
-  Searching}.
-\newblock Addison-Wesley, 1973.
-
-\end{thebibliography}
 
 \end{document}
