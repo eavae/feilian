@@ -9,6 +9,7 @@ from tqdm import tqdm
 from collections import defaultdict
 from minify_html import minify
 from langchain_openai.chat_models import ChatOpenAI
+#from langchain_anthropic.chat_models import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 
 from feilian.soup_tools import get_node_contain_text, get_common_ancestor, clean_html
@@ -153,7 +154,7 @@ def swde__construct_question(file_path: str):
     """
 
     # construct question using langchain
-    llm = ChatOpenAI(model="deepseek-chat", temperature=0.1)
+    llm = ChatOpenAI(model="deepseek-chat", temperature=0.1) # ChatAnthropic    
     template = ChatPromptTemplate.from_messages([("human", QUESTION_CONSTRUCTION_EN)])
     chain = template | llm
 

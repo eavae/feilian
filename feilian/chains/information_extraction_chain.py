@@ -4,6 +4,7 @@ import json_repair
 from operator import itemgetter
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 lang = os.environ.get("PROMPT_LANG", "cn")
 
@@ -24,7 +25,7 @@ def json_parser(response):
 
 
 def create_information_extraction_chain(cue=False):
-    llm = ChatOpenAI(model=os.environ.get("OPENAI_IE_MODEL"), temperature=0)
+    llm = ChatOpenAI(model=os.environ.get("OPENAI_IE_MODEL"), temperature=0) # ChatAnthropic
     if cue:
         template_file = f"feilian/prompts/{lang}/information_extraction_with_cue.jinja2"
         example = {
@@ -64,7 +65,7 @@ def _create_best_composition_chain():
 
         return choices
 
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0) # ChatAnthropic
     template_file = f"feilian/prompts/{lang}/best_composition.yaml"
     prompt = PromptTemplate.from_file(template_file)
     return prompt | llm | parser

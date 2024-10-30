@@ -2,6 +2,7 @@ import os
 import json_repair
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
+#from langchain_anthropic import ChatAnthropic
 
 lang = os.environ.get("PROMPT_LANG", "cn")
 
@@ -38,7 +39,7 @@ def create_xpath_rewrite_chain():
         result = json_repair.loads(text) or {}
         return result.get("xpath", "")
 
-    llm = ChatOpenAI(
+    llm = ChatOpenAI( # ChatAnthropic
         model=os.getenv("OPENAI_MODEL"),
         temperature=0,
     )

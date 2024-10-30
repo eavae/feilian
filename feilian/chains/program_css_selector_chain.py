@@ -4,6 +4,7 @@ from functional import compose
 from operator import itemgetter
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
+#from langchain_anthropic import ChatAnthropic
 
 
 def create_cot_program_css_selector_s2():
@@ -16,7 +17,7 @@ def create_cot_program_css_selector_s2():
         json_str = json_str.split("```")[0].strip()
         return json_repair.repair_json(json_str, return_objects=True)
 
-    llm = ChatOpenAI(
+    llm = ChatOpenAI(  # ChatAnthropic
         model=os.getenv("OPENAI_MODEL"),
         temperature=0,
     )
@@ -43,7 +44,7 @@ def create_cot_program_css_selector_s1():
         json_str = json_str.split("```")[0].strip()
         return json_repair.repair_json(json_str, return_objects=True)
 
-    llm = ChatOpenAI(
+    llm = ChatOpenAI( # ChatAnthropic
         model=os.getenv("OPENAI_MODEL"),
         temperature=0,
     )

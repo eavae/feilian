@@ -10,6 +10,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.constants import Send
 from enum import Enum
 from langchain_openai import ChatOpenAI
+#from langchain_anthropic import ChatAnthropic
 from minify_html import minify
 from langgraph.checkpoint.sqlite import SqliteSaver
 
@@ -122,7 +123,7 @@ def get_tree(snippet: Snippet, compact: bool = True) -> etree._Element:
 
 
 def _create_table_extraction_chain():
-    llm = ChatOpenAI(
+    llm = ChatOpenAI(   #ChatAnthropic
         model=os.getenv("OPENAI_MODEL"),
         temperature=0.1,
         model_kwargs={
@@ -135,7 +136,7 @@ def _create_table_extraction_chain():
 
 
 def _create_program_xpath_chain():
-    llm = ChatOpenAI(
+    llm = ChatOpenAI(  #ChatAnthropic
         model="deepseek-coder",
         temperature=0.1,
         model_kwargs={
@@ -151,7 +152,7 @@ def _create_program_xpath_chain():
 
 
 def _create_question_conversion_chain():
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0.1)
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0.1) # ChatAnthropic
     return QUESTION_CONVERSION_COMP_CN | llm
 
 

@@ -48,7 +48,7 @@ def _create_cot_program_xpath_s3_chain():
         json_str = json_str.split("```")[0].strip()
         return json_repair.repair_json(json_str, return_objects=True)
 
-    llm = ChatOpenAI(
+    llm = ChatOpenAI( # ChatAnthropic
         model=os.getenv("OPENAI_MODEL"),
         temperature=0,
     )
@@ -81,7 +81,7 @@ def create_cot_program_xpath_s2():
         json_str = json_str.split("```")[0].strip()
         return json_repair.repair_json(json_str, return_objects=True)
 
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0) # ChatAnthropic
     template_file = f"feilian/prompts/{lang}/program_xpath_cot_s2.yaml"
     return (
         {
@@ -106,7 +106,7 @@ def create_cot_program_xpath_s1():
         json_str = json_str.split("```")[0].strip()
         return json_repair.repair_json(json_str, return_objects=True)
 
-    llm = ChatOpenAI(
+    llm = ChatOpenAI( # ChatAnthropic
         model=os.getenv("OPENAI_MODEL"),
         temperature=0,
     )
