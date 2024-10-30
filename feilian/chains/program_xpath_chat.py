@@ -9,6 +9,7 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import ChatOpenAI
+#from langchain_anthropic import ChatAnthropic
 
 lang = os.environ.get("PROMPT_LANG", "cn")
 
@@ -92,7 +93,7 @@ def create_program_xpath_chat_chain():
             return ""
         return result.get("xpath", "")
 
-    llm = ChatOpenAI(
+    llm = ChatOpenAI( # ChatAnthropic
         model=os.getenv("OPENAI_PROGRAM_XPATH_MODEL", "deepseek-chat"),
         temperature=0,
         max_tokens=512,
