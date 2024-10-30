@@ -4,6 +4,7 @@ from functional import compose
 from operator import itemgetter
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
+#from langchain_anthropic import ChatAnthropic
 
 from feilian.prompts import (
     XPATH_PROGRAM_PROMPT_HISTORY_CN,
@@ -19,7 +20,7 @@ def _create_program_xpath_chain():
             return_objects=True,
         )
 
-    llm = ChatOpenAI(
+    llm = ChatOpenAI( #ChatAnthropic
         model=os.getenv("OPENAI_MODEL"),
         temperature=0,
         model_kwargs={
