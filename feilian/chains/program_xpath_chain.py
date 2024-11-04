@@ -66,7 +66,7 @@ def _create_cot_program_xpath_s3_chain():
 
 
 def create_cot_program_xpath_s2():
-    lang = os.environ.get("PROMPT_LANG", "cn")
+    lang = os.environ.get("PROMPT_LANG", "en")
 
     def parser(response):
         if lang == "cn":

@@ -11,7 +11,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import ChatOpenAI
 #from langchain_anthropic import ChatAnthropic
 
-lang = os.environ.get("PROMPT_LANG", "cn")
+lang = os.environ.get("PROMPT_LANG", "en")
 
 program_xpath_chat_system = PromptTemplate.from_file(
     "feilian/prompts/en/program_xpath_chat_system.jinja2",

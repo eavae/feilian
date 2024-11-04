@@ -4,7 +4,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 #from langchain_anthropic import ChatAnthropic
 
-lang = os.environ.get("PROMPT_LANG", "cn")
+lang = os.environ.get("PROMPT_LANG", "en")
 
 
 def rindex(lst, value):

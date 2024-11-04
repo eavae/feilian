@@ -6,7 +6,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 
-lang = os.environ.get("PROMPT_LANG", "cn")
+lang = os.environ.get("PROMPT_LANG", "en")
 
 
 def json_parser(response):
@@ -52,7 +52,7 @@ def create_information_extraction_chain(cue=False):
 
 
 def _create_best_composition_chain():
-    lang = os.environ.get("PROMPT_LANG", "cn")
+    lang = os.environ.get("PROMPT_LANG", "en")
 
     def parser(response):
         if lang == "cn":
