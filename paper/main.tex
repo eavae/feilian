@@ -46,13 +46,13 @@ In order to increase the efficiency of XPath query generation, we also employed 
 
 \subsection{Our Contributions}
 
-We address each of the above motivations and make the following main contributions:
+We based each of the above motivations and make the following contributions:
 
 \begin{enumerate}
-  \item We designed a two stage pipeline, which we can employ a week LLM to extract target information. And a stronger LLM to program XPath.
+  \item We designed a two stage pipeline, which we can employ a weaker LLM to extract target information. And a stronger LLM to program XPath.
   \item We proposed a simple way to prune the web page, which can reduce the complexity of the web page and make the LLM focus on the target information.
-  \item We discovered a cue text that share context between two stage significantly improve the performance of the XPath programming agent.
-  \item We benchmarked our approach against a state-of-the-art XPath programming agent across a suite of web crawling tasks. Our findings reveal that our approach excels in F1 score with minimal compromise on accuracy, while significantly reducing token usage and increase clock-time efficiency.
+  \item We discovered that extracted cue texts from 1st stage significantly improve the performance of the 2nd stage.
+  \item We benchmarked our approach against a state-of-the-art same purpose agent across a suite of web crawling tasks. Our findings reveal that our approach excels in F1 score with minimal compromise on accuracy, while significantly reducing token usage and increase clock-time efficiency.
 \end{enumerate}
 
 \section{Related Work}

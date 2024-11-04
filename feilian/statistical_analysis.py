@@ -43,7 +43,7 @@ def swde__stats_token_row(row):
     html_file_path = os.path.join(SWDE_DATA_ROOT, row["file_path"])
     html = open(html_file_path).read()
     tree = parse_html(html)
-    etree_clean_html(tree)
+    etree_clean_html(tree, True)
     cleaned_html = minify(to_string(tree), keep_closing_tags=True)
 
     row["raw_tokens"] = tokenizer(html)
@@ -52,52 +52,69 @@ def swde__stats_token_row(row):
     return row
 
 
-def swde__stats_token(dataset_file_path: str):
-    from pandarallel import pandarallel
-
-    pandarallel.initialize(progress_bar=True, nb_workers=4)
-
-    df = pd.read_parquet(dataset_file_path)
-
-    # sample 256 per group, group by category, site
-    df = df.groupby(["category", "site"]).apply(
-        lambda x: x.sample(min(len(x), 256), replace=False)
-    )
-
-    # remove index
-    df.reset_index(drop=True, inplace=True)
-
-    df = df.parallel_apply(swde__stats_token_row, axis=1)
-    df.to_csv("data/swde_token_stats.csv")
+def _bin_fn(x):
+    return x // 4000 * 4000
 
 
 def swde__plot_token_dist(
     dataset_file_path: str,
-    group_cols: list = ["category", "site"],
     target_col: str = "cleaned_tokens",
+    sample_size: int = 128,
 ):
-    from plotly.subplots import make_subplots
     import plotly.graph_objects as go
+    import plotly.express as px
 
+    # read & sample
     df = pd.read_csv(dataset_file_path, index_col=0)
-    pairs = df[group_cols].groupby(group_cols).nunique().index
-    n_cols = 8
-    n_rows = len(pairs) // n_cols + 1
+    df = df.groupby(["category", "site"]).apply(
+        lambda x: x.sample(min(len(x), sample_size), replace=False)
+    )
+    df.reset_index(drop=True, inplace=True)
 
-    fig = make_subplots(
-        rows=n_rows, cols=n_cols, subplot_titles=[f"{pair}" for pair in pairs]
+    # count tokens
+    df = df.apply(swde__stats_token_row, axis=1)
+    df["token_cat"] = df["raw_tokens"].apply(_bin_fn)
+    group_df = (
+        df.groupby("token_cat")["raw_tokens", "cleaned_tokens"].mean().astype(int)
     )
 
-    for i, pair in enumerate(pairs):
-        row, col = i // n_cols + 1, i % n_cols + 1
-        pair_df = df[(df[group_cols] == pair).all(axis=1)]
-        fig.add_trace(
-            go.Histogram(x=pair_df[target_col], name=f"{pair}", histnorm="percent"),
-            row=row,
-            col=col,
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=group_df.index,
+            y=group_df["raw_tokens"],
+            name="tokens",
+            marker_color=px.colors.qualitative.D3[0],
         )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=group_df.index,
+            y=group_df["cleaned_tokens"],
+            name="after sanitization",
+            marker_color=px.colors.qualitative.D3[1],
+        )
+    )
 
-    fig.update_layout(height=2048)
+    fig.update_layout(
+        # title_text=f"Information Extraction Sanitizer Analyse (Evenly Sampled {len(df)} from SWDE)",  # title of plot
+        title_x=0.5,  # title x location
+        xaxis_title_text="binned at 4k intervals",  # xaxis label
+        yaxis_title_text="mean",  # yaxis label
+        bargap=0.2,  # gap between bars of adjacent location coordinates
+        bargroupgap=0.1,  # gap between bars of the same location coordinates
+        xaxis=dict(
+            tickmode="array",
+            tickvals=group_df.index,
+            ticktext=[f"{x // 1000}k" for x in group_df.index],
+        ),
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
+        margin={"t": 4, "l": 4, "b": 4, "r": 4},
+    )
+    # fig.update_yaxes(type="log")
+    fig.update_xaxes(title_standoff=8)
+    fig.update_yaxes(title_standoff=8)
+    fig.write_image("fig1.eps")
     fig.show()
 
 
@@ -574,37 +591,4 @@ def swde__plot_fragment_token_stats():
 
 
 if __name__ == "__main__":
-    # swde__stats_token("data/swde.parquet")
-    # swde__stats_parallel_pruning()
-    swde__plot_fragment_count_stats()
-    # swde__plot_fragment_token_stats()
-
-    # structure, cleaned_html = read_and_structure_html(
-    #     "sourceCode/sourceCode/restaurant/restaurant-pickarestaurant(2000)/0000.htm"
-    # )
-
-    # with open("test.html", "w") as f:
-    #     f.write(cleaned_html)
-
-    # with open("structure_test.html", "w") as f:
-    #     f.write(structure)
-
-    # html_text = open(
-    #     os.path.join(
-    #         SWDE_DATA_ROOT, "sourceCode/sourceCode/auto/auto-aol(2000)/0392.htm"
-    #     ),
-    #     "r",
-    # ).read()
-    # tree = parse_html(html_text)
-    # etree_clean_html(tree)
-    # initial_tokens = tokenizer(minify(to_string(tree)))
-    # fragment_tokens = []
-
-    # for xpath in extract_fragments_by_weight(tree, tokenizer, only_text=True, until=64):
-    #     for node in tree.xpath(xpath):
-    #         node.clear()
-    #         node.text = ""
-    #     tokens = tokenizer(minify(to_string(tree)))
-    #     fragment_tokens.append(initial_tokens - tokens)
-    #     initial_tokens = tokens
-    # pass
+    swde__plot_token_dist("data/swde_token_stats.csv")
