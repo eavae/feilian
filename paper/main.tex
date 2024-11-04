@@ -1,6 +1,7 @@
 \documentclass[a4paper]{article}
 \usepackage{graphicx}
 \usepackage{twocolceurws}
+\usepackage[ruled,vlined]{algorithm2e}
 
 
 \title{XPath Agent: An Efficient XPath Programming Agent Based on LLM for Web Crawler}
@@ -70,11 +71,72 @@ Generating generalizable XPath queries using LLMs has emerged as a robust method
 
 \subsection{Information Extraction }
 
-...
+\begin{algorithm}
+  \SetAlgoLined
+  \caption{IE HTML Sanitizer}
+  \KwIn{Root node of HTML tree $root\_node$}
+  \KwOut{Sanitized HTML tree}
+  
+  $left\_stack \gets [root\_node]$\;
+  $right\_stack \gets []$\;
+  
+  \While{$left\_stack$ is not empty}{
+      $node \gets left\_stack.pop()$\;
+      $right\_stack.append(node)$\;
+      $left\_stack \gets left\_stack + list(node.iterchildren())$\;
+  }
+  
+  \While{$right\_stack$ is not empty}{
+      $node \gets right\_stack.pop()$\;
+      \If{$is\_invisiable\_or\_no\_text(node)$}{
+          $node.getparent().remove(node)$\;
+      }
+      \Else{
+          $node.remove\_attributes()$\;
+      }
+  }
+\end{algorithm}
 
-\subsection{XPath Program }
+\subsection{XPath Program}
 
-...
+\begin{algorithm}
+  \SetAlgoLined
+  \caption{HTML Condenser}
+  \KwIn{
+      $root$: HTML root node\;
+      $target\_texts$: List of target texts to keep\;
+      $d$: Distance function between two texts\;
+  }
+  \KwOut{
+      $root$: Condensed HTML root node\;
+  }
+  
+  $target\_texts \gets []$\;
+  $distances \gets \{\}$\;
+  $eles \gets \{\}$\;
+  
+  \ForEach{$ele, text$ in \texttt{iter\_with\_text}($root$)}{
+      \ForEach{$target\_text$ in $target\_texts$}{
+          $distance \gets d(text, target\_text)$\;
+          \If{$distance < distances[text]$}{
+              $distances[text] \gets distance$\;
+              $eles[text] \gets [\texttt{get\_xpath}($ele$)]$\;
+          }
+          \ElseIf{$distance == distances[text]$}{
+              $eles[text].\texttt{append}(\texttt{get\_xpath}($ele$))$\;
+          }
+      }
+  }
+
+  $targets \gets \texttt{concat}(\texttt{values}(eles))$\;
+  \ForEach{$xpath, ele$ in \texttt{iter\_with\_xpath}($root$)}{
+    \If{\texttt{is\_outside}($xpath$, $targets$)}{
+      \texttt{remove\_children}(ele)\;
+      \texttt{replace\_text\_to}(ele, "...")\;
+    }
+  }
+
+\end{algorithm}
 
 \section{Experiments }
 
