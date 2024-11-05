@@ -2,7 +2,6 @@
 \usepackage{graphicx}
 \usepackage{twocolceurws}
 \usepackage[ruled,vlined]{algorithm2e}
-\usepackage{graphicx}
 \usepackage{adjustbox}
 \usepackage{caption} % 引入 caption 包
 
@@ -74,23 +73,38 @@ Generating generalizable XPath queries using LLMs has emerged as a robust method
 \begin{figure*}[h]
   \centering
   \includegraphics[width=1\textwidth]{./workflow.png}
-  \caption{XPath Agent of two stages pipeline. The first stage is Information Extraction, which extracts target information and cue text from sanitized web pages (the red are sanitized). The second stage is XPath Programming, which generates XPath queries based on condensed html (the green are kept) and generated XPath.}
+  \caption{XPath Agent of two stages pipeline. The first stage is Information Extraction, which extracts target information and cue text from sanitized web pages (the red are sanitized). The second stage is XPath Programming, which generates XPath queries based on condensed html (the greens are target nodes) and generated XPath.}
   \label{fig:workflow}
   \vspace{20pt} % 手动插入 20pt 的垂直间距
 \end{figure*}
 
 \section{Methodology}
 
-In this section, we present the methodology of our approach, which consists of two stages: Information Extraction (IE) and XPath Programming. The IE stage extracts target information from sanitized web pages, while the XPath Programming stage generates XPath queries based on the condensed html and extracted information. \ref{fig:workflow} illustrates the two-stage pipeline of XPath Agent. For each stage, we provide a detailed description of the process and the algorithms used.
+In this section, we present the methodology of our approach, which consists of two stages: Information Extraction (IE) and XPath Programming. The IE stage extracts target information from sanitized web pages, while the XPath Programming stage generates XPath queries based on the condensed html and extracted information. Figure \ref{fig:workflow} illustrates the two-stage pipeline of XPath Agent. For each stage, we provide a detailed description of the process and the algorithms used.
 
 \subsection{Information Extraction with Cue Text}
 
-The Information Extraction (IE) stage aims to extract target information. Not like traditional IE, we discovered 2 key insights. Firstly, we prompt the LLM to not only extract questioned information but also extract cue texts. Cue texts are the texts that are close to the target information and can help the LLM to generate better XPath queries. Secondly, we sanitize the web page before feeding it to the LLM. Sanitizing the web page can reduce the complexity of the web page and make the LLM focus on the target information.
+The Information Extraction (IE) stage aims to extract target information. Not like traditional IE, we discovered 2 key insights. Firstly, we prompt the LLM to not only extract questioned information but also include cue texts. Secondly, we sanitized the web page to reduce the complexity of the web page and make the LLM focus on the target information.
 
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{./ie_token_stats.eps}
+  \caption{Token Stats Analysis with Algorithm 1. As page size grow, the size after sanitization increased slowly (sampled 128 pages for each category from SWDE dataset, around 10k pages totally).}
+  \label{fig:ie_token_stats}
+\end{figure}
+
+Cue texts are the indicative texts that signals the upcoming target information. For example, for "price: \$100.00", the cue text is "price:". Those texts are important in some case, especially when no way or hard to directly programming XPath queries to extract target information "\$100.00". In such case, treat "price:" as an anchor, using XPath's ancestor, sibling, or descendant axis traverse to the target information is the only way. In order to let the context still be condensed, we prompt LLM to response cue texts simultaneously.
+
+Sanitizing web page is a process to remove unnecessary information from a page. In HTML, the most meaningful parts are texts and tags. The texts are the target information we want to extract, and the tags are the structure of the web page which tells the relationship between texts especially the priority of which answer is more likely to be the target information. The purpose of sanitizing the web page is to reduce the complexity of the web page and make the LLM focus on the target information. We designed an algorithm to sanitize the web page, which is shown in Algorithm \ref{alg:sanitizer}.
+
+The algorithm 1 traverse the HTML tree in a depth-first manner. It removes the invisible or empty nodes and removes all attributes. It's efficient and can be easily implemented in any programming language. In our sampled web pages, the algorithm can reduce the size of the web page by 80\%~90\% on average.
+
+In our implementation, we prompt LLM to extract all information at once on a single page with JSON format. So, multiple fields can be extracted at the same time. Multiple values for a single field might be extracted. We simply treat all extracted values are relevant and passing them to the next stage.
 
 \begin{algorithm}
   \SetAlgoLined
   \caption{IE HTML Sanitizer}
+  \label{alg:sanitizer}
   \KwIn{Root node of HTML tree $root\_node$}
   \KwOut{Sanitized HTML tree}
   
