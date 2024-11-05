@@ -2,6 +2,11 @@
 \usepackage{graphicx}
 \usepackage{twocolceurws}
 \usepackage[ruled,vlined]{algorithm2e}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{caption} % 引入 caption 包
+
+\captionsetup[figure]{skip=10pt} % 设置 caption 的下边距为 10pt
 
 
 \title{XPath Agent: An Efficient XPath Programming Agent Based on LLM for Web Crawler}
@@ -65,11 +70,23 @@ An alternative approach to direct information extraction involves simplifying we
 
 \subsection{LLMs and XPaths for Information Extraction}
 Generating generalizable XPath queries using LLMs has emerged as a robust method for automating web information extraction across structurally similar websites. This approach leverages LLMs’ understanding of document structures to create XPath queries that dynamically adapt to minor variations in web page layouts, increasing the scalability of extraction systems. Tools like TREEX, which integrate decision tree learning, allow for the synthesis of XPaths that balance precision and recall across multiple web pages, even those with unseen structures (Omari et al., 2024). This technique significantly reduces the need for manual intervention and facilitates the creation of highly efficient and reusable extractors for tasks such as price comparison and product aggregation across e-commerce platforms (Huang et al., 2024). 
+
+\begin{figure*}[h]
+  \centering
+  \includegraphics[width=1\textwidth]{./workflow.png}
+  \caption{XPath Agent of two stages pipeline. The first stage is Information Extraction, which extracts target information and cue text from sanitized web pages (the red are sanitized). The second stage is XPath Programming, which generates XPath queries based on condensed html (the green are kept) and generated XPath.}
+  \label{fig:workflow}
+  \vspace{20pt} % 手动插入 20pt 的垂直间距
+\end{figure*}
+
 \section{Methodology}
 
-...
+In this section, we present the methodology of our approach, which consists of two stages: Information Extraction (IE) and XPath Programming. The IE stage extracts target information from sanitized web pages, while the XPath Programming stage generates XPath queries based on the condensed html and extracted information. \ref{fig:workflow} illustrates the two-stage pipeline of XPath Agent. For each stage, we provide a detailed description of the process and the algorithms used.
 
-\subsection{Information Extraction }
+\subsection{Information Extraction with Cue Text}
+
+The Information Extraction (IE) stage aims to extract target information. Not like traditional IE, we discovered 2 key insights. Firstly, we prompt the LLM to not only extract questioned information but also extract cue texts. Cue texts are the texts that are close to the target information and can help the LLM to generate better XPath queries. Secondly, we sanitize the web page before feeding it to the LLM. Sanitizing the web page can reduce the complexity of the web page and make the LLM focus on the target information.
+
 
 \begin{algorithm}
   \SetAlgoLined
