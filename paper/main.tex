@@ -97,9 +97,9 @@ Cue texts are the indicative texts that signals the upcoming target information.
 
 Sanitizing web page is a process to remove unnecessary information from a page. In HTML, the most meaningful parts are texts and tags. The texts are the target information we want to extract, and the tags are the structure of the web page which tells the relationship between texts especially the priority of which answer is more likely to be the target information. The purpose of sanitizing the web page is to reduce the complexity of the web page and make the LLM focus on the target information. We designed an algorithm to sanitize the web page, which is shown in Algorithm \ref{alg:sanitizer}.
 
-The algorithm 1 traverse the HTML tree in a depth-first manner. It removes the invisible or empty nodes and removes all attributes. It's efficient and can be easily implemented in any programming language. In our sampled web pages, the algorithm can reduce the size of the web page by 80\%~90\% on average.
+The algorithm 1 traverse the HTML tree in a depth-first manner. It removes the invisible or empty nodes, and all attributes. It's efficient and can be easily implemented in any programming language. In our sampled web pages, the algorithm can help us reduce the size of the web page to 10\%~20\% on average.
 
-In our implementation, we prompt LLM to extract all information at once on a single page with JSON format. So, multiple fields can be extracted at the same time. Multiple values for a single field might be extracted. We simply treat all extracted values are relevant and passing them to the next stage.
+In our implementation, we prompt LLM to extract all information at once on a single page with JSON format. So, multiple fields can be extracted at the same time. Multiple values for a single field might be extracted. In this case, We simply treat all extracted values are relevant and passing them to the next stage.
 
 \begin{algorithm}
   \SetAlgoLined
