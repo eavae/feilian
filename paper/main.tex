@@ -1,3 +1,4 @@
+% !TEX root = C:\Users\xilua\My Drive\Workspace\llm_xpath\feilian\paper\main.tex
 \documentclass[a4paper]{article}
 \usepackage{graphicx}
 \usepackage{twocolceurws}
@@ -15,8 +16,7 @@ Li Yu \\ \\ lijingyu68@gmail.com
 \and
 Bryce Wang \\ Stanford University  \\ brycewang2018@gmail.com
 \and
-Hazul \\ Research Dept.\\
-                Science City, Sci 88088 \\ yvo@science.rdept.net
+Xinyu Luan \\ \\ \\ xinyuluan0320@gmail.com
 }
 
 \institution{}
@@ -170,7 +170,74 @@ In our implementation, we prompt LLM to extract all information at once on a sin
 
 \section{Experiments }
 
-...
+\subsection{Experimental Setup}
+
+\subsubsection{Models}
+We use DeepSeek and ChatGPT-4.0 as the primary large language models in our experiments.
+
+\subsubsection{Dataset}
+We use the SWDE \cite{abdin2024phi3technicalreporthighly} (Structured Web Data Extraction) dataset, which includes 90 of websites across 9 domains, in total 20414 web pages.
+
+\subsubsection{Experimental Parameters}
+We use DeepSeek-Chat as the main model for our XPath Agent. The Number of Seeds is 3 initial seeds are provided to guide query generation and the 
+Sample Size: 32 web pages are sampled per task to evaluate the model’s adaptability and generalizability.
+
+\subsection{Evaluation Metrics}
+For evaluation, we employ the metrics of precision, recall, F1 score, and accuracy. we utilized a set matching method to calculate the metrics 
+for multi-label classification tasks where the labels are unordered. 
+This involves comparing each predicted label set with the corresponding ground truth label set while disregarding the order of the labels. 
+First, Both the ground truth and predictions are converted into sets to ignore any order. Accuracy is then defined such that a prediction is 
+counted as correct if the predicted set exactly matches the ground truth set. We count correctly predicted labels as True Positives. 
+Incorrectly predicted labels that are not in ground truth are classified as False Positives, while the labels that should have been in predicted set 
+but were missed are designated as False Negatives. Additionally, since our data does not contain blank answers (with only a very few exceptions that have been removed), 
+our cases do not have true negatives. Finally, precision, recall, F1 score, and accuracy are calculated by the following formula.
+\begin{center}
+$presision=\frac{Ture Positives}{Ture Positives + False Positives}$\\ [0.3 cm]
+$recall=\frac{Ture Positives}{True Positives + False Negatives}$\\ [0.3 cm]
+$F1=\frac{2 \times precision \times recall}{precision + recall}$\\ [0.3 cm]
+$accuracy=\frac{True Positives}{True Positives + False Positives + False Negatives}$
+\end{center}
+
+\section{Results and Analysis}
+\subsection{Statistical Analysis}
+
+\begin{table}[ht]
+    \begin{center}
+    \caption{Experimental Results}
+    
+    
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\ \hline
+    DeepSeek & 0.5794 & \textbf{0.6764} & 0.8017 & 0.7337 \\ 
+    GPT 4o & 0.5793 & 0.6423 & \textbf{0.8553} & 0.7336 \\
+    Claude 3.0 & 0.6091	& 0.6796 & 0.8546 & \textbf{0.7571} \\
+    Claude 3.5 & \textbf{0.6191} & \textbf{0.6916} & \textbf{0.8551} & \textbf{0.7647} \\ \hline
+    \end{tabular}
+    \end{center}
+    \end{table}
+    
+    DeepSeek is strong in precision, making it good at avoiding irrelevant data. GPT 4o is highly effective at capturing a wide range of relevant content, 
+    ensuring that few important elements are missed. Claude 3.0 strikes a balanced approach, effectively combining both precision and recall for 
+    solid overall performance of F1 score. Claude 3.5 stands out as the most balanced and effective model, excelling across all key areas of accuracy, 
+    precision, recall, and overall performance. It provides the best mix of identifying relevant data while minimizing errors.
+    
+
+\subsection{Comparative Analysis} 
+The AutoCrawler \cite{huang2024autoscraperprogressiveunderstandingweb} framework focuses on generating web crawlers for extracting specific information from semi-structured HTML. 
+It is designed with a two-phase approach: the first phase uses a progressive generation framework that leverages the hierarchical 
+structure of HTML pages, while the second phase employs a synthesis framework that improves crawler performance by learning from 
+multiple web pages. 
+
+In comparison to XPath Agent, AutoCrawler presents a different approach, emphasizing a sequence of XPath actions rather than 
+just the extraction of XPath from snapshots. This difference may influence performance in various metrics, such as F1 score. 
+AutoCrawler's focus on refining action sequences based on learning from past errors might offer advantages in terms of robustness 
+and adaptability to dynamic web structures. However, your XPath Agent, by isolating XPath extraction tasks, might achieve greater 
+precision in structured environments where precise element identification is crucial.
+
+\subsection{Error Analysis} TODO
+
+
 
 \section{Conclusion }
 
