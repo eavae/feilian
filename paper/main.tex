@@ -5,14 +5,18 @@
 \usepackage[ruled,vlined]{algorithm2e}
 \usepackage{adjustbox}
 \usepackage{caption} % 引入 caption 包
+\usepackage{hyperref}
+% \usepackage[sort, authoryear]{natbib}
 
+\bibliographystyle{plain} 
+% \setcitestyle{authoryear,open={(},close={)}}
 \captionsetup[figure]{skip=10pt} % 设置 caption 的下边距为 10pt
 
 
 \title{XPath Agent: An Efficient XPath Programming Agent Based on LLM for Web Crawler}
 
 \author{
-Li Yu \\ \\ lijingyu68@gmail.com
+Yu Li \\ \\ lijingyu68@gmail.com
 \and
 Bryce Wang \\ Stanford University  \\ brycewang2018@gmail.com
 \and
@@ -79,11 +83,11 @@ This technique significantly reduces the need for manual intervention and facili
 
 \section{Methodology}
 
-In this section, we present the methodology of our approach, which consists of two stages: Information Extraction (IE) and XPath Programming. The IE stage extracts target information from sanitized web pages, while the XPath Programming stage generates XPath queries based on the condensed html and extracted information. Figure \ref{fig:workflow} illustrates the two-stage pipeline of XPath Agent. For each stage, we provide a detailed description of the process and the algorithms used.
+In this section, we present the methodology of our approach, which consists of two stages: Information Extraction (IE) and XPath Programming. The IE stage extracts target information from sanitized web pages, while the XPath Programming stage generates XPath queries based on the condensed html by extracted information. The whole process based on seeded web pages, which is 3 in our implementation. Figure \ref{fig:workflow} illustrates the two-stage pipeline of XPath Agent. For each stage, we provide a detailed description of the process and the algorithms used.
 
 \subsection{Information Extraction with Cue Text}
 
-The Information Extraction (IE) stage aims to extract target information. Not like traditional IE, we discovered 2 key insights. Firstly, we prompt the LLM to not only extract questioned information but also include cue texts. Secondly, we sanitized the web page to reduce the complexity of the web page and make the LLM focus on the target information.
+The Information Extraction (IE) stage aims to extract target information. Not like traditional IE, we discovered 2 key insights. Firstly, we prompt LLM not only extract questioned information but also cue texts. Secondly, we sanitized the web page to reduce the complexity of the web page and make the LLM focus on the target information with contextual semantic.
 
 \begin{figure}[h]
   \centering
@@ -94,11 +98,12 @@ The Information Extraction (IE) stage aims to extract target information. Not li
 
 Cue texts are the indicative texts that signals the upcoming target information. For example, for "price: \$100.00", the cue text is "price:". Those texts are important in some case, especially when no way or hard to directly programming XPath queries to extract target information "\$100.00". In such case, treat "price:" as an anchor, using XPath's ancestor, sibling, or descendant axis traverse to the target information is the only way. In order to let the context still be condensed, we prompt LLM to response cue texts simultaneously.
 
-Sanitizing web page is a process to remove unnecessary information from a page. In HTML, the most meaningful parts are texts and tags. The texts are the target information we want to extract, and the tags are the structure of the web page which tells the relationship between texts especially the priority of which answer is more likely to be the target information. The purpose of sanitizing the web page is to reduce the complexity of the web page and make the LLM focus on the target information. We designed an algorithm to sanitize the web page, which is shown in Algorithm \ref{alg:sanitizer}.
+Sanitizing web page is a process to remove unnecessary information from a page. In HTML, the most meaningful parts are texts and tags. The texts are the target information we want to extract, and the tags are the structure of the web page which tells the relationship between texts especially the priority of which answer is more likely to be the target information. The purpose of sanitizing the web page is to reduce the complexity of the web page and make the LLM focus on the target information. We designed an algorithm to sanitize the web page, which is shown in Algorithm \ref{alg:sanitizer}. We also employed minify-html\cite{minifyhtml} to further reduce the size of the web page.
 
-The algorithm 1 traverse the HTML tree in a depth-first manner. It removes the invisible or empty nodes, and all attributes. It's efficient and can be easily implemented in any programming language. In our sampled web pages, the algorithm can help us reduce the size of the web page to 10\%~20\% on average.
+The algorithm 1 traverse the HTML tree in a depth-first manner. It removes the invisible or empty nodes, and all attributes. It's efficient and can be easily implemented in any programming language. In our sampled web pages, it can help us reduce the size of the web page to 10\%~20\% on average.
 
-In our implementation, we prompt LLM to extract all information at once on a single page with JSON format. So, multiple fields can be extracted at the same time. Multiple values for a single field might be extracted. In this case, We simply treat all extracted values are relevant and passing them to the next stage.
+In our implementation, we prompt LLM to extract all information at once on a single page with JSON format. So, multiple fields or multiple values for a single field might be extracted. We treat all extracted values are relevant and passing them to the next stage.
+
 
 \begin{algorithm}
   \SetAlgoLined
@@ -127,11 +132,16 @@ In our implementation, we prompt LLM to extract all information at once on a sin
   }
 \end{algorithm}
 
-\subsection{XPath Program}
+\subsection{Program XPath}
+
+Program XPath queries is a process to generate XPath queries based on the condensed html by extracted information. In order to let LLM have more context to program a robust XPath query, we condensed the html by the extracted information and prompt with 3 seeded web pages at once. The algorithm is shown in Algorithm \ref{alg:condenser}.
+
+The condenser based on the extracted information, which is the target information and cue texts. A distance function is used to identify the most relevant nodes so that we can keep them in the condensed html. During the condense process, we keep the target nodes and replace other nodes' children with "...".
 
 \begin{algorithm}
   \SetAlgoLined
   \caption{HTML Condenser}
+  \label{alg:condenser}
   \KwIn{
       $root$: HTML root node\;
       $target\_texts$: List of target texts to keep\;
@@ -167,6 +177,21 @@ In our implementation, we prompt LLM to extract all information at once on a sin
   }
 
 \end{algorithm}
+
+\subsection{Static XPath Generation}
+
+Program a robust XPath query is a challenging task. Which requires to balance between rigidity and flexibility. The rigidity means the XPath query should strictly follow the specific structure of the web page. The flexibility means the XPath query should be pruned to be generalizable across different web pages. In our early experiments, we discovered that the XPath query generated by LLM is not sticky to the structure of the web page. So, we designed a static XPath generation algorithm to guide LLMs.
+
+The static XPath generation algorithm propagate from the target node to root node. It generates the XPath query in a bottom-up manner. Unlike naive XPath generation algorithm. We add more attributes (in our case, we include class and id) to the XPath query. It makes the XPath query richer.
+
+\subsection{Conversational XPath Evaluator}
+
+LLM are lacks of the environment to evaluate, correct or improve the XPath queries. So, we designed a evaluator to evaluate LLM generated XPath.
+
+The XPath evaluator is a function, which execute the XPath query on seeded web pages and feedback the result to LLM. The result include 3 parts: what are missing, what are redundant, and correctness of the XPath query. The LLM can based on feedback to improve the XPath query.
+
+In our implementation, we limited the number of feedback loop to 3. At the end of the loop, we take the best XPath query based on evaluation result as the final result.
+
 
 \section{Experiments }
 
@@ -317,8 +342,15 @@ go at the end of the paper.
 
 
 % \addbibresource{refs.bib}
-\bibliographystyle{plain} 
-\bibliography{refs}
+\bibliography{refs}{}
 
+
+\appendix
+
+\section{Information Extraction Prompt}
+This is the first appendix.
+
+\section{Program XPath Prompt}
+This is the second appendix.
 
 \end{document}
