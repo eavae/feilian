@@ -20,7 +20,7 @@ Yu Li \\ \\ lijingyu68@gmail.com
 \and
 Bryce Wang \\ Stanford University  \\ brycewang2018@gmail.com
 \and
-Xinyu Luan \\ \\ \\ xinyuluan0320@gmail.com
+Xinyu Luan \\ \\ xinyuluan0320@gmail.com
 }
 
 \institution{}
@@ -30,32 +30,34 @@ Xinyu Luan \\ \\ \\ xinyuluan0320@gmail.com
 \maketitle
 
 \begin{abstract}
-We introduce XPath Agent, a production-ready XPath programming agent tailored for web crawling tasks. A standout feature of XPath Agent is its capability to automatically program XPath queries from a set of sampled web pages. To illustrate its efficacy, we benchmark XPath Agent against a state-of-the-art XPath programming agent across a suite of web crawling tasks. Our findings reveal that XPath Agent excels in F1 score with minimal compromise on accuracy, while significantly reducing token usage and increase clock-time efficiency. The well designed 2 stage pipelines makes it readily integrable into existing web crawling workflows, thereby saving time and effort in manual XPath query development.
+  We present XPath Agent, a production-ready XPath programming agent specifically designed for web crawling and web GUI testing. A key feature of XPath Agent is its ability to automatically generate XPath queries from a set of sampled web pages using a single natural language query. To demonstrate its effectiveness, we benchmark XPath Agent against a state-of-the-art XPath programming agent across a range of web crawling tasks. Our results show that XPath Agent achieves comparable performance metrics while significantly reducing token usage and improving clock-time efficiency. The well-designed two-stage pipeline allows for seamless integration into existing web crawling or web GUI testing workflows, thereby saving time and effort in manual XPath query development.
 \end{abstract}
 
 \section{Introduction}
 
 Web scraping \cite{khder2021web} automates data extraction from websites, vital for modern fields like Business Intelligence. It excels in gathering structured data from unstructured sources like HTML, especially when machine-readable formats are unavailable. Web scraping provides real-time data, such as pricing from retail sites, and can offer insights into illicit activities like darknet drug markets.
 
-The advent of HTML5 \cite{TABARES2021101529} has introduced significant complexities to automated web scraping, exacerbating issues of fragmentation and protocol diversity that have long challenged the development of web standards. These complexities stem from the enhanced capabilities and dynamic nature of HTML5, which require more sophisticated methods to accurately extract and interpret data. As traditional web scraping techniques struggle to keep pace with these advancements, there is a growing need for innovative solutions to navigate the intricacies of modern web technologies.
+The advent of HTML5 \cite{TABARES2021101529} has introduced significant complexities to automated web scraping. These complexities stem from the enhanced capabilities and dynamic nature of HTML5, which require more sophisticated methods to accurately extract and interpret data. To address these challenges, researchers have developed a variety of tools, such as Selenium \cite{selenium}. Which offers a set of application programming interfaces (APIs) to automate web browsers, enabling the extraction of data from web pages. However, program Selenium to extract data from web pages is a time-consuming and error-prone process. The most crucial part is how to locate the target information on the web page. XPath queries provide a solution to this problem by allowing users to navigate the HTML structure of a web page and extract specific elements. But, programming XPath queries is a challenging task, especially for non-technical users.
+
+In addition to web crawling, XPath is also essential for web GUI testing. Web GUI testing involves interacting with web elements to verify that the user interface behaves as expected. XPath queries are used to locate elements on a web page, such as buttons, input fields, and links, which are then interacted with during the testing process. By automating these interactions, testers can efficiently validate the functionality and appearance of web applications across different browsers and devices. The ability to generate accurate and robust XPath queries is crucial for ensuring comprehensive test coverage and reliable test results.
 
 The development of Large Language Models (LLM) has emerged as a promising avenue. LLMs, with their advanced natural language processing capabilities, offer a new paradigm for understanding and interacting with web content. AutoWebGLM\cite{lai2024autowebglmlargelanguagemodelbased} demonstrated significant advancements in addressing the complexities of real-world web navigation tasks, particularly in simplifying HTML data representation to enhancing it's capability. By leveraging reinforcement learning and rejection sampling, AutoWebGLM enhanced its ability to comprehend webpages, execute browser operations, and efficiently decompose tasks.
 
-Instead of fine-tuning LLMs, AutoScraper\cite{huang2024autoscraperprogressiveunderstandingweb} adopt a simplified technique which involves traversing the webpage and constructing a final XPath using generated action sequences. By focusing on the hierarchical structure of HTML and leveraging similarities across different web pages, its significantly reduces the complexity and computational overhead.
+Instead of one time task execution, AutoScraper\cite{huang2024autoscraperprogressiveunderstandingweb} adopt a simplified technique which only involves text content of webpages. By focusing on the hierarchical structure of HTML and traversing the webpage, it construct a final XPath using generated action sequences. Such XPath is generalizable and can be applied to multiple webpages. Which significantly reduce the time required when execution.
 
-Scrolling, navigating, back and forward through webpages to program XPath queries is a nature way for human. But for LLM, this process is time-consuming and computationally expensive. We expect LLM can do better and efficient.
+But, the above approaches are not efficient in generating XPath queries. We introduced a more effective approach to generate XPath queries using LLMs which could simply integrate into existing web crawling or web GUI testing workflows. 
 
 \subsection{Motivation}
 
-We assuming there are 3 core reasons why LLMs are not efficient in generating XPath queries. Firstly, LLMs are not designed to generate XPath queries. Secondly, web pages are lengthy and complex, full of task unrelated information. Those information distract the LLMs from generating the correct XPath queries. Thirdly, LLMs are context limited. A good XPath query should be generalizable across different web pages. However, LLMs can only generate XPath queries based on the context they have seen. So, a shorter and more task-related context is more likely to generate a better XPath query.
+We assuming there are 3 core reasons why LLMs are not efficient in generating XPath queries. Firstly, LLMs are not designed to generate XPath queries. Secondly, web pages are lengthy and complex, full of task unrelated information. Those information distract LLMs from generating the correct XPath queries. Thirdly, LLMs are context limited. A good XPath query should be generalizable across different web pages. However, LLMs can only generate XPath queries based on the context they have seen. So, a shorter and more task-related context is more likely to generate a better XPath query.
 
 Based on the above insights, we propose a novel approach to generate XPath queries using LLMs. We aim to reduce the number of steps required to generate a well-crafted XPath query, reduce the computational overhead, and improve the generalizability of the XPath queries generated by LLMs.
 
-In order to increase the efficiency of XPath query generation, we also employed LangGraph. Which is a graph-based tool set which we can define the whole pipeline in a graph-based manner and execute it in parallel. Which significantly reduce the time required to generate XPath queries.
+In order to increase the efficiency of XPath query generation, we also employed LangGraph. Which is a graph-based tool set which we can define the whole pipeline in a graph-based manner and execute it in parallel. Which significantly reduce the time to generate XPath queries.
 
 \subsection{Our Contributions}
 
-We based each of the above motivations and make the following contributions:
+In summary, our contributions are as follows:
 
 \begin{enumerate}
   \item We designed a two stage pipeline, which we can employ a weaker LLM to extract target information. And a stronger LLM to program XPath.
@@ -69,10 +71,9 @@ We based each of the above motivations and make the following contributions:
 Large Language Models (LLMs) are increasingly being used for generative information extraction (IE), where they directly generate structured knowledge from text—such as entities, relations, and events—offering an alternative to traditional discriminative methods (Xu et al., 2024). LLMs are especially advantageous in low-resource settings and support multitasking formats, which enhances their adaptability across various IE tasks. These tasks are typically categorized into Named Entity Recognition (NER), Relation Extraction (RE), and Event Extraction (EE), with a rigorous comparison of models’ performance in each area (Xu et al., 2024).
 
 Recent universal IE frameworks employ both natural language-based LLMs (NL-LLMs) and code-based LLMs (Code-LLMs). NL-LLMs, like UIE and InstructUIE, use natural language prompts to generate structured information. In contrast, Code-LLMs, such as Code4UIE and CodeKGC, leverage code-based schemas, offering more precise knowledge representation (Gan et al., 2023; Wei et al., 2023; Bi et al., 2024). In addition to text-based IE, advancements in LLMs have facilitated information extraction from web data. These models now enable processing of entire web pages post-crawling, extracting structured information such as product details and prices without manual, rule-based configurations (Ahluwalia et al., 2024). This web data extraction capability utilizes LLMs’ proficiency in interpreting complex HTML structures, enhancing flexibility across dynamic online environments. However, challenges remain in ensuring factual accuracy and managing the computational demands of large models (Xu et al., 2024). Models like NeuScraper have addressed some of these challenges by integrating neural networks for direct HTML text extraction, yielding more accurate results and offering a promising alternative to traditional web scraping methods (Xu et al., 2024).
-\subsection{LLMs and XPaths for Information Extraction}
-As a specific generation technique of large models, generating Xpath for web information retrieval is also an efficient method for automating web information extraction. This approach leverages LLMs’ understanding of document structures to create XPath queries that dynamically adapt to minor variations in web page layouts, increasing the scalability of extraction systems for structurally similar websites. Tools like TREEX, which integrate decision tree learning, allow for the synthesis of XPaths that balance precision and recall across multiple web pages, even those with unseen structures (Omari et al., 2024). 
 
-This technique significantly reduces the need for manual intervention and facilitates the creation of highly efficient and reusable extractors for tasks such as price comparison and product aggregation across e-commerce platforms (AUTOSCRAPER, Huang et al., 2024). Specifically, AUTOSCRAPER employs a progressive generation phase to traverse HTML structures and a synthesis phase to refine reusable action sequences across similar web pages, enhancing scalability and efficiency in dynamic environments
+\subsection{LLMs and XPaths for Information Extraction}
+
 \begin{figure*}[h]
   \centering
   \includegraphics[width=1\textwidth]{./workflow.png}
@@ -80,6 +81,11 @@ This technique significantly reduces the need for manual intervention and facili
   \label{fig:workflow}
   \vspace{20pt} % 手动插入 20pt 的垂直间距
 \end{figure*}
+
+As a specific generation technique of large models, generating Xpath for web information retrieval is also an efficient method for automating web information extraction. This approach leverages LLMs’ understanding of document structures to create XPath queries that dynamically adapt to minor variations in web page layouts, increasing the scalability of extraction systems for structurally similar websites. Tools like TREEX, which integrate decision tree learning, allow for the synthesis of XPaths that balance precision and recall across multiple web pages, even those with unseen structures (Omari et al., 2024). 
+
+This technique significantly reduces the need for manual intervention and facilitates the creation of highly efficient and reusable extractors for tasks such as price comparison and product aggregation across e-commerce platforms (AUTOSCRAPER, Huang et al., 2024). Specifically, AUTOSCRAPER employs a progressive generation phase to traverse HTML structures and a synthesis phase to refine reusable action sequences across similar web pages, enhancing scalability and efficiency in dynamic environments.
+
 
 \section{Methodology}
 
@@ -138,6 +144,22 @@ Program XPath queries is a process to generate XPath queries based on the conden
 
 The condenser based on the extracted information, which is the target information and cue texts. A distance function is used to identify the most relevant nodes so that we can keep them in the condensed html. During the condense process, we keep the target nodes and replace other nodes' children with "...".
 
+
+\subsection{Static XPath Generation}
+
+Program a robust XPath query is a challenging task. Which requires to balance between rigidity and flexibility. The rigidity means the XPath query should strictly follow the specific structure of the web page. The flexibility means the XPath query should be pruned to be generalizable across different web pages. In our early experiments, we discovered that the XPath query generated by LLM is not sticky to the structure of the web page. So, we designed a static XPath generation algorithm to guide LLMs.
+
+The static XPath generation algorithm propagate from the target node to root node. It generates the XPath query in a bottom-up manner. Unlike naive XPath generation algorithm. We add more attributes (in our case, we include class and id) to the XPath query. It makes the XPath query richer.
+
+\subsection{Conversational XPath Evaluator}
+
+LLM are lacks of the environment to evaluate, correct or improve the XPath queries. So, we designed a evaluator to evaluate LLM generated XPath.
+
+The XPath evaluator is a function, which execute the XPath query on seeded web pages and feedback the result to LLM. The result include 3 parts: what are missing, what are redundant, and correctness of the XPath query. The LLM can based on feedback to improve the XPath query.
+
+In our implementation, we limited the number of feedback loop to 3. At the end of the loop, we take the best XPath query based on evaluation result as the final result.
+
+
 \begin{algorithm}
   \SetAlgoLined
   \caption{HTML Condenser}
@@ -177,20 +199,6 @@ The condenser based on the extracted information, which is the target informatio
   }
 
 \end{algorithm}
-
-\subsection{Static XPath Generation}
-
-Program a robust XPath query is a challenging task. Which requires to balance between rigidity and flexibility. The rigidity means the XPath query should strictly follow the specific structure of the web page. The flexibility means the XPath query should be pruned to be generalizable across different web pages. In our early experiments, we discovered that the XPath query generated by LLM is not sticky to the structure of the web page. So, we designed a static XPath generation algorithm to guide LLMs.
-
-The static XPath generation algorithm propagate from the target node to root node. It generates the XPath query in a bottom-up manner. Unlike naive XPath generation algorithm. We add more attributes (in our case, we include class and id) to the XPath query. It makes the XPath query richer.
-
-\subsection{Conversational XPath Evaluator}
-
-LLM are lacks of the environment to evaluate, correct or improve the XPath queries. So, we designed a evaluator to evaluate LLM generated XPath.
-
-The XPath evaluator is a function, which execute the XPath query on seeded web pages and feedback the result to LLM. The result include 3 parts: what are missing, what are redundant, and correctness of the XPath query. The LLM can based on feedback to improve the XPath query.
-
-In our implementation, we limited the number of feedback loop to 3. At the end of the loop, we take the best XPath query based on evaluation result as the final result.
 
 
 \section{Experiments }
