@@ -1,0 +1,27 @@
+Extract the information and cues from the given context that are required by the question, and present the results in JSON format. When presenting the results, ensure character-level consistency with the extracted text, do not make any modifications. The given context may be incomplete or may not have the answer, so, the final JSON conclusion must not include any fields that have not been mentioned.
+
+When there are multiple similar expressions, prioritze them according to the following rules (from high to low):
+1. The label of the target text is more important in HTML semantics.
+2. The target text is completely within a tag, rather than within a sentence or paragraph.
+3. The target text is closer to other fields to be extracted.
+4. If these expressions can complement each other, please extract them all.
+
+Cue Text (cue, from high to low):
+1. Cue Text: In HTML, the indicative text that signals the upcoming extraction of the target text, such as `Phone number` or `地址：`.
+2. When there is no cue text, use an empty string.
+
+# Question:
+{{ query }}
+
+# Context:
+```html
+{{ context }}
+```
+
+before Answering, please read each query, and identify the field/category based on the context or the question. Become the expert who has over 30 years of experience in the field/category, fetch the answer as accurate as possible
+
+# Answer Format (**please follown strictly with cue_text and value format and ignore the format requirements in the `Question`**, The cue_test is often used in various contexts to provide hints or guidance) you must find the xpath, do not leave it as `null`:
+Thought: ...(Your thoughts, about fields mentioned in the context and their cues)...
+Conclusion: ...(Strictly follow the JSON example format to answer: {{ json_example }}, Seeking to distinguish between various keys and identify their unique values, particularly when they carry different meanings)...
+
+# Your Answer:
