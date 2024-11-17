@@ -195,11 +195,11 @@ def program_xpath_node(state: State):
         raw_html = minify(snippet["raw_html"], keep_closing_tags=True)
         tree = parse_html(raw_html)
 
-        field_object = snippet["data"].get(field_name, None)
+        field_object = snippet["data"].get(field_name, {})
         if not field_object:
             continue
 
-        values = field_object["value"]
+        values = field_object.get("value", [])
         if not values:
             continue
 
@@ -217,7 +217,7 @@ def program_xpath_node(state: State):
         if not target_xpath:
             continue
 
-        cue_text = field_object["cue_text"]
+        cue_text = field_object.get("cue_text", None)
         if os.environ.get("ABLATION_EXPERIMENT", None) == "WITHOUT_CUE":
             cue_text = None
         if cue_text:
