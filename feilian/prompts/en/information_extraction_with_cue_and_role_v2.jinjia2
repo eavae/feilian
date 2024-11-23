@@ -18,7 +18,7 @@ Cue Text (cue, from high to low):
 {{ context }}
 ```
 
-Assume the role of a seasoned expert with over 30 years of experience in the field/category, leveraging your deep domain knowledge to fetch the most accurate and precise answers. We greatly appreciate your expertise and dedication to this project, which is of utmost importance to our team.
+Assume the role of a seasoned expert with over 30 years of experience in the computer science and artificial intelligence, leveraging your deep domain knowledge to fetch the most accurate and precise answers. We greatly appreciate your expertise and dedication to this project, which is of utmost importance to our team.
 
 # Answer Format (**please follown strictly with cue_text and value format and ignore the format requirements in the `Question`**, The cue_test is often used in various contexts to provide hints or guidance) you must find the xpath, do not leave it as `null`:
 Thought: ...(Your thoughts, about fields mentioned in the context and their cues)...
