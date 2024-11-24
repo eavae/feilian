@@ -10,10 +10,11 @@ from minify_html import minify
 from typing import Dict, List
 from collections import defaultdict
 
-#import sys
-#sys.path.append('/Users/brycewang/Documents/GitHub/FEILIAN')
+# import sys
+# sys.path.append('/Users/brycewang/Documents/GitHub/FEILIAN')
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from feilian.agents.agent import (
@@ -395,8 +396,8 @@ def eval(xpath_df: pd.DataFrame, candidates=None, sample_size=32):
 
 if __name__ == "__main__":
     xpath_df = program_xpath(
-        load_extraction_from="tmp/program_xpath_wo_q",
-        save_to_dir="tmp/program_xpath", # 这里面已经有文件了，第二次跑的时候，就可以直接读取，而不需要再次生成
+        # load_extraction_from="tmp/program_xpath_wo_q",
+        save_to_dir="tmp/program_xpath_with_role",  # 这里面已经有文件了，第二次跑的时候，就可以直接读取，而不需要再次生成
         ## 要评估哪个文件夹，save to 就是哪个文件夹
     )
     eval_df, predictions_df = eval(xpath_df)

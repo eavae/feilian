@@ -5,4 +5,5 @@
 __pycache__
 /test_*.py
 /tmp
+/.tmp
 .venv

@@ -3,8 +3,7 @@ import re
 import json_repair
 from operator import itemgetter
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
+from feilian.models import get_chat_model
 
 lang = os.environ.get("PROMPT_LANG", "en")
 
@@ -25,7 +24,7 @@ def json_parser(response):
 
 
 def create_information_extraction_chain(cue=False):
-    llm = ChatOpenAI(model=os.environ.get("OPENAI_IE_MODEL"), temperature=0) # ChatAnthropic
+    llm = get_chat_model(os.environ.get("IE_MODEL"))
     if cue:
         template_file = f"feilian/prompts/{lang}/information_extraction_with_cue.jinja2"
         example = {
@@ -50,27 +49,5 @@ def create_information_extraction_chain(cue=False):
         | json_parser
     )
 
-
-def _create_best_composition_chain():
-    lang = os.environ.get("PROMPT_LANG", "en")
-
-    def parser(response):
-        if lang == "cn":
-            choices = response.content.split("最终结论:")[-1].strip()
-        else:
-            choices = response.content.split("Final Conclusion:")[-1].strip()
-
-        choices = choices.split("\n")[0]
-        choices = [int(x) for x in re.findall(r"\d", choices)]
-
-        return choices
-
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0) # ChatAnthropic
-    template_file = f"feilian/prompts/{lang}/best_composition.yaml"
-    prompt = PromptTemplate.from_file(template_file)
-    return prompt | llm | parser
-
-
-best_composition_chain = _create_best_composition_chain()
 information_extraction_chain = create_information_extraction_chain()
 cued_information_extraction_chain = create_information_extraction_chain(cue=True)
