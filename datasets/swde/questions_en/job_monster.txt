@@ -1,9 +1,1 @@
-What are the details of the job summarized in the provided context, formatted as a JSON object with keys "company", "location", and "title"?
-
-```json
-{
-  "company": ["..."],
-  "location": ["..."],
-  "title": ["..."]
-}
-```
+What are the details of the job summarized in the provided context, with keys `company`, `location`, and `title`?

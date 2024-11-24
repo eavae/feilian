@@ -1,10 +1,1 @@
-Based on the provided context, please provide the basic contact and type information for the institution in JSON format. The JSON should include keys for "name", "phone", "type", and "website". Here is the JSON structure to follow:
-
-```json
-{
-  "name": ["...", "..."],
-  "phone": ["..."],
-  "type": ["..."],
-  "website": ["..."]
-}
-```
+请提供机构的基本联系和类型信息，包括名称(`name`)、联系电话(`phone`)、类型(`type`)和网站链接(`website`)。

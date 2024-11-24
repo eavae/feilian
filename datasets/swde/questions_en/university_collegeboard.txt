@@ -1,11 +1,1 @@
-Based on the provided context, please provide the relevant details in JSON format with the following keys and values: `name`, `phone`, `type`, and `website`.
-
-JSON:
-```json
-{
-  "name": ["..."],
-  "phone": ["...", "...", "..."],
-  "type": ["..."],
-  "website": ["..."]
-}
-```
+Based on the provided context, please provide the relevant details with the following keys and values: `name`, `phone`, `type`, and `website`.

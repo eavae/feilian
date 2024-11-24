@@ -1,0 +1,10 @@
+What is the JSON representation of the job posting details provided in the context?
+
+```json
+{
+  "company": ["..."],
+  "date_posted": ["..."],
+  "location": ["..."],
+  "title": ["..."]
+}
+```

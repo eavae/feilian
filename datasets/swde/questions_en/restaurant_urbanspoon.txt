@@ -1,10 +1,1 @@
-Based on the provided context, please provide the details of the restaurant in JSON format. The JSON should include the restaurant's address, cuisine type, name, and phone number. Here is the JSON format to follow:
-
-```json
-{
-  "address": ["...", "...", "...", "..."],
-  "cuisine": ["..."],
-  "name": ["..."],
-  "phone": ["..."]
-}
-```
+请提供餐厅的地址(`address`)、菜系类型(`cuisine`)、名称(`name`)和联系电话(`phone`)。

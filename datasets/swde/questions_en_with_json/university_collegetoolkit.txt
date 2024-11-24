@@ -1,0 +1,9 @@
+What is the JSON representation of the name, type, and website of the institution mentioned in the context?
+
+```json
+{
+  "name": ["..."],
+  "type": ["..."],
+  "website": ["..."]
+}
+```

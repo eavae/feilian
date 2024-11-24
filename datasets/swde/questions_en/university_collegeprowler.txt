@@ -1,10 +1,1 @@
-Based on the provided context, please provide the contact information, type, and website of the institution in JSON format. Here is the JSON structure to follow:
-
-```json
-{
-  "name": ["..."],
-  "phone": ["..."],
-  "type": ["..."],
-  "website": ["..."]
-}
-```
+请提供机构的名称(`name`)、联系电话(`phone`)、类型(`type`)和网站(`website`)。

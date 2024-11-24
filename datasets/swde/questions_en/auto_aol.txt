@@ -1,9 +1,1 @@
-What are the fuel economy, model, and price (only MSRP) for the auto described in the context, formatted as a JSON response?
-
-```json
-{
-  "fuel_economy": ["..."],
-  "model": ["..."],
-  "price": ["$..."]
-}
-```
+What are the fuel economy(`fuel_economy`), model(`model`), and price (only MSRP)(`price`) for the auto described in the context?

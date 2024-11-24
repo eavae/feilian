@@ -1,0 +1,10 @@
+Given the context provided, which includes detailed information about an NBA player's profile, team, and statistics, please extract the following details about the player in JSON format:
+
+```json
+{
+  "height": ["..."],
+  "name": ["..."],
+  "team": ["..."],
+  "weight": ["..."]
+}
+```

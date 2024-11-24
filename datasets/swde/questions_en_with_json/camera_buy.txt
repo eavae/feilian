@@ -1,0 +1,10 @@
+Given the JSON data provided, what are the details of the digital camera including its manufacturer, model names (aka product names), and price?
+
+JSON Data:
+```json
+{
+  "manufacturer": ["..."],
+  "model": ["...", "..."],
+  "price": ["..."]
+}
+```

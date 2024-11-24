@@ -1,0 +1,11 @@
+Based on the provided context, could you provide a JSON object containing the details of the book, including the author, ISBN-13, publication date, publisher, and title? The JSON should follow this format:
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```

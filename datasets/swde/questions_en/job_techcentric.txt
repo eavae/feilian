@@ -1,10 +1,1 @@
-What are the details of the job posting in JSON format?
-
-```json
-{
-  "company": ["..."],
-  "date_posted": ["..."],
-  "location": ["..."],
-  "title": ["..."]
-}
-```
+What are the details of the job posting? Provide the company(`company`), date posted(`date_posted`), location(`location`), and title(`title`).

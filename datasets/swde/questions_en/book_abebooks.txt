@@ -1,11 +1,1 @@
-What are the specifications of the book described in the context, including author, isbn number, publisher, publication date and title, formatted as a JSON object?
-
-```json
-{
-  "author": ["..."],
-  "isbn_13": ["..."],
-  "publication_date": ["..."],
-  "title": ["..."],
-  "publisher": ["...]
-}
-```
+What are the specifications of the book described in the context, including author(`author`), isbn number(`isbn_13`), publisher(`publisher`), publication date(`publication_date`) and title(`title`)?

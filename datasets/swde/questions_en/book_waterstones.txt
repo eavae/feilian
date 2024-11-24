@@ -9,3 +9,629 @@ What is the JSON representation of the book's details as provided in the context
   "title": ["..."]
 }
 ```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the context?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "publisher": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：What is the JSON representation of the book's details as provided in the

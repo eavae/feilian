@@ -1,8 +1,1 @@
-Based on the provided context, please provide the model (product name), and price of the product in JSON format.
-
-```json
-{
-  "model": ["..."],
-  "price": ["..."]
-}
-```
+请提供产品的型号(`model`)和价格(`price`)。

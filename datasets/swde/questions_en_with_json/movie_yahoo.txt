@@ -1,0 +1,11 @@
+What is the JSON representation of the movie's director, genre, MPAA rating, and title based on the provided context?
+
+JSON:
+```json
+{
+  "director": ["..."],
+  "genre": ["..."],
+  "mpaa_rating": ["..."],
+  "title": ["..."]
+}
+```

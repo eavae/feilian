@@ -1,10 +1,1 @@
-Please provide the details of the restaurant in JSON format, including the address, cuisine, name, and phone number. The JSON should be structured as follows:
-
-```json
-{
-  "address": ["...", "..."],
-  "cuisine": ["..."],
-  "name": ["..."],
-  "phone": ["..."]
-}
-```
+Please provide the details of the restaurant, including the address(`address`), cuisine(`cuisine`), name(`name`), and phone number(`phone`).

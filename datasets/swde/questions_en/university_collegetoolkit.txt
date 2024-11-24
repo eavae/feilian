@@ -1,9 +1,1 @@
-What is the JSON representation of the name, type, and website of the institution mentioned in the context?
-
-```json
-{
-  "name": ["..."],
-  "type": ["..."],
-  "website": ["..."]
-}
-```
+What is the JSON representation of the name(`name`), type(`type`), and website(`website`) of the institution mentioned in the context?

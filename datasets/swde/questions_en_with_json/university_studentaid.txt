@@ -1,0 +1,10 @@
+Please provide the contact details, type, and website of the institution in JSON format.
+
+```json
+{
+  "name": ["..."],
+  "phone": ["...", "..."],
+  "type": ["..."],
+  "website": ["..."]
+}
+```

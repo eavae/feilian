@@ -1,10 +1,1 @@
-What is the JSON representation of the restaurant's name, address, phone number, and cuisine type based on the provided context?
-
-```json
-{
-  "address": ["..."],
-  "cuisine": ["..."],
-  "name": ["..."],
-  "phone": ["..."]
-}
-```
+What is the JSON representation of the restaurant's name(`name`), address(`address`), phone number(`phone`), and cuisine type(`cuisine`) based on the provided context?

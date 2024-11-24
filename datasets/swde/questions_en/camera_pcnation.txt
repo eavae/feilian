@@ -1,9 +1,1 @@
-What is the JSON representation of the manufacturer, model (product name), and price of the product described in the context?
-
-```json
-{
-  "manufacturer": ["...", "...if more than one..."],
-  "model": ["...", "..."],
-  "price": ["..."]
-}
-```
+What is the JSON representation of the manufacturer(`manufacturer`), model(`model`) (product name), and price(`price`) of the product described in the context?

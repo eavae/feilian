@@ -1,12 +1,1 @@
-Please provide the book details in JSON format using the following keys: `author`, `isbn_13`, `publication_date`, `publisher`, and `title`.
-
-JSON:
-```json
-{
-  "author": ["..."],
-  "isbn_13": ["..."],
-  "publication_date": ["..."],
-  "publisher": ["..."],
-  "title": ["..."]
-}
-```
+Please provide the book details using the following keys: `author`, `isbn_13`, `publication_date`, `publisher`, and `title`.

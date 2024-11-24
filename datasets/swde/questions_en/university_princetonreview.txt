@@ -1,9 +1,1 @@
-What is the JSON representation of the name, phone number, and type of the institution mentioned in the context provided?
-
-```json
-{
-  "name": ["..."],
-  "phone": ["..."],
-  "type": ["..."]
-}
-```
+What is the JSON representation of the name(`name`), phone number(`phone`), and type(`type`) of the institution mentioned in the context provided?

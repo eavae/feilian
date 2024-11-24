@@ -1,0 +1,10 @@
+What is the JSON representation of the restaurant's details as listed in the provided HTML snippet?
+
+```json
+{
+  "address": ["..."],
+  "cuisine": ["..."],
+  "name": ["..."],
+  "phone": ["..."]
+}
+```

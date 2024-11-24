@@ -1,10 +1,1 @@
-Based on the provided movie overview, please provide the JSON representation of the director, genre, MPAA rating, and title of the movie. The JSON should be formatted as follows:
-
-```json
-{
-  "director": ["..."],
-  "genre": ["...", "..."],
-  "mpaa_rating": ["..."],
-  "title": ["..."]
-}
-```
+请提供电影的导演(`director`)、类型(`genre`)、MPAA评级(`mpaa_rating`)和标题(`title`)。

@@ -1,10 +1,11 @@
 What is the JSON representation of the job posting details provided in the context?
 
 ```json
-{
-  "company": ["..."],
-  "date_posted": ["..."],
-  "location": ["..."],
-  "title": ["..."]
-}
+{"company":["..."],"date_posted":["..."],"location":["..."],"title":["..."]}
+```
+
+回答：What is the JSON representation of the job posting details provided in the context?
+
+```json
+{"company":["公司名称"],"date_posted":["发布日期"],"location":["地点"],"title":["职位名称"]}
 ```

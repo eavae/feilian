@@ -1,0 +1,10 @@
+What is the JSON representation of the restaurant's name, address, phone number, and cuisine type based on the provided context?
+
+```json
+{
+  "address": ["..."],
+  "cuisine": ["..."],
+  "name": ["..."],
+  "phone": ["..."]
+}
+```
