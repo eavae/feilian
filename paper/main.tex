@@ -67,15 +67,28 @@ In summary, our contributions are as follows:
   \item We discovered that extracted cue texts from 1st stage significantly improve the performance of the 2nd stage.
   \item We benchmarked our approach against a state-of-the-art same purpose agent across a suite of web crawling tasks. Our findings reveal that our approach excels in F1 score with minimal compromise on accuracy, while significantly reducing token usage and increase clock-time efficiency.
 \end{enumerate}
-
 \section{Related Work}
-\subsection{Generative Information Extraction}
+Information extraction (IE) serves as a cornerstone of natural language processing, transforming unstructured text into structured entities, relations, and events. Traditional IE approaches often relied on task-specific models, which demanded substantial annotated corpora and computational resources. The advent of large language models (LLMs), particularly GPT-based architectures, has revolutionized this field. LLMs excel in zero-shot and few-shot learning due to pretraining on vast text corpora, enabling efficient and flexible IE for diverse and complex applications.
 
-Large Language Models (LLMs) are increasingly being used for generative information extraction (IE), where they directly generate structured knowledge from text—such as entities, relations, and events—offering an alternative to traditional discriminative methods (Xu et al., 2024). LLMs are especially advantageous in low-resource settings and support multitasking formats, which enhances their adaptability across various IE tasks. These tasks are typically categorized into Named Entity Recognition (NER), Relation Extraction (RE), and Event Extraction (EE), with a rigorous comparison of models’ performance in each area (Xu et al., 2024).
+\subsection{Web Information Extraction}
 
-Recent universal IE frameworks employ both natural language-based LLMs (NL-LLMs) and code-based LLMs (Code-LLMs). NL-LLMs, like UIE and InstructUIE, use natural language prompts to generate structured information. In contrast, Code-LLMs, such as Code4UIE and CodeKGC, leverage code-based schemas, offering more precise knowledge representation (Gan et al., 2023; Wei et al., 2023; Bi et al., 2024). In addition to text-based IE, advancements in LLMs have facilitated information extraction from web data. These models now enable processing of entire web pages post-crawling, extracting structured information such as product details and prices without manual, rule-based configurations (Ahluwalia et al., 2024). This web data extraction capability utilizes LLMs’ proficiency in interpreting complex HTML structures, enhancing flexibility across dynamic online environments. However, challenges remain in ensuring factual accuracy and managing the computational demands of large models (Xu et al., 2024). Models like NeuScraper have addressed some of these challenges by integrating neural networks for direct HTML text extraction, yielding more accurate results and offering a promising alternative to traditional web scraping methods (Xu et al., 2024).
+Web information extraction (WebIE) has evolved alongside the increasing complexity of web layouts and dynamic content. Traditional rule-based methods, effective for static pages, struggle with modern web structures. LLMs and advanced frameworks have emerged as solutions, leveraging schema-based, multimodal, and generative techniques to unify tasks like Named Entity Recognition (NER), Relation Extraction (RE), and Event Extraction (EE) through prompt engineering and fine-tuning \cite{xu2024largelanguagemodelsgenerative}.
 
-\subsection{LLMs and XPaths for Information Extraction}
+Recent works emphasize the importance of modeling structural context in webpages. WebFormer \cite{wang2022webformerwebpagetransformerstructure} employs graph attention mechanisms to capture local and global dependencies within the DOM tree, achieving state-of-the-art results on the SWDE benchmark. Similarly, FreeDOM \cite{DBLP:journals/corr/abs-2010-10755} combines node-level encoding with pairwise relational features, enabling robust generalization across unseen websites without visual rendering. Simplified DOM representations, such as those used in SimpDOM \cite{zhou2021simplifieddomtreestransferable}, enhance feature transferability across verticals, achieving superior cross-domain performance while avoiding reliance on computationally expensive visual features.
+
+Generative approaches further demonstrate the adaptability of LLMs in WebIE. ChatIE \cite{wei2024chatie} reformulates extraction tasks into multi-turn dialogues, improving zero-shot capabilities. Frameworks like NeuScraper \cite{ahluwalia2024leveraginglargelanguagemodels} integrate neural models with HTML structures to enhance data quality, while MIND2WEB \cite{deng2023mind2webgeneralistagentweb} extends these innovations with a dataset and framework for training generalist agents capable of performing diverse tasks across real-world websites.
+
+On the multimodal front, models like GoLLIE \cite{sainz2024gollieannotationguidelinesimprove} and MoEEF \cite{yang2024hypertextentityextractionwebpage} integrate visual and textual data to address domain-specific challenges. GoLLIE aligns annotation guidelines with code generation for better extractions, while MoEEF incorporates hypertext features to boost entity recognition. Vision-based LLMs, such as GPT-4 Vision \cite{fellman-etal-2024-future}, highlight the growing importance of multimodal techniques for processing visually encoded web data.
+
+\subsection{LLMs and XPaths for Web Information Extraction}
+
+XPath, a language for querying hierarchical document structures, plays a vital role in bridging structured representation with computational modeling. MarkupLM \cite{DBLP:journals/corr/abs-2110-08518} demonstrates how XPath captures the genealogy of DOM nodes, seamlessly integrating textual and markup features for tasks such as Masked Markup Language Modeling (MMLM) and Node Relation Prediction (NRP). These techniques enable dynamic adaptation to complex web layouts, surpassing the limitations of 2D positional embeddings.
+
+XPath generation further extends WebIE capabilities. Tools like TREEX \cite{10.1145/3018661.3018740} and AUTOSCRAPER \cite{huang-etal-2024-autoscraper} employ decision tree learning and progressive HTML traversal to generate reusable extractors, balancing precision and recall for diverse applications such as price comparison and product aggregation. By leveraging the interpretive capabilities of LLMs, these methods scale to diverse web environments, underscoring the synergy between structured document analysis and scalable information extraction.
+
+\subsection{Summary}
+
+The evolution of WebIE reflects the integration of structural, multimodal, and generative techniques into scalable systems. LLMs and frameworks leveraging DOM structures, multimodal data, and XPath queries have significantly advanced this field, enabling robust and adaptable solutions for dynamic web environments. These advancements collectively highlight the transformative potential of combining pre-trained models, structural embeddings, and domain-specific optimizations in tackling modern WebIE challenges. Future directions should focus on enhancing generalization across unseen web domains and improving multimodal fusion for visually rich webpages.
 
 \begin{figure*}[h]
   \centering
@@ -84,11 +97,6 @@ Recent universal IE frameworks employ both natural language-based LLMs (NL-LLMs)
   \label{fig:workflow}
   \vspace{20pt} % 手动插入 20pt 的垂直间距
 \end{figure*}
-
-As a specific generation technique of large models, generating Xpath for web information retrieval is also an efficient method for automating web information extraction. This approach leverages LLMs’ understanding of document structures to create XPath queries that dynamically adapt to minor variations in web page layouts, increasing the scalability of extraction systems for structurally similar websites. Tools like TREEX, which integrate decision tree learning, allow for the synthesis of XPaths that balance precision and recall across multiple web pages, even those with unseen structures (Omari et al., 2024). 
-
-This technique significantly reduces the need for manual intervention and facilitates the creation of highly efficient and reusable extractors for tasks such as price comparison and product aggregation across e-commerce platforms (AUTOSCRAPER, Huang et al., 2024). Specifically, AUTOSCRAPER employs a progressive generation phase to traverse HTML structures and a synthesis phase to refine reusable action sequences across similar web pages, enhancing scalability and efficiency in dynamic environments.
-
 
 \section{Methodology}
 
