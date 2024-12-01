@@ -81,9 +81,7 @@ class SeedDataset:
             id=idx,
             query=df["query"].iloc[0],
             htmls=df["html"].tolist(),
-            ground_truth=[
-                json.loads(x) for x in df["ground_truth"].tolist()
-            ],
+            ground_truth=[json.loads(x) for x in df["ground_truth"].tolist()],
         )
 
     def __iter__(self):
@@ -97,6 +95,30 @@ class SWDE(Dataset):
         self.random_state = np.random.RandomState(seed)
 
         df = self.read_data()
+        seed_df = df.groupby(["category", "site"]).apply(
+            lambda x: x.sample(
+                n=3,
+                random_state=self.random_state,
+            )
+        )
+        drop_indices = set(i[2] for i in seed_df.index)
+        seed_df.reset_index(drop=True, inplace=True)
+        self.seed_df = seed_df
+        df: pd.DataFrame = df.drop(drop_indices)
+        df.reset_index(drop=True, inplace=True)
+
+        # sample in group category, site
+        df = (
+            df.groupby(["category", "site"])
+            .apply(
+                lambda x: x.sample(
+                    n=self.eval_sample_size,
+                    random_state=self.random_state,
+                ),
+            )
+            .reset_index(drop=True)
+        )
+        self.df = df
 
         # sample in group category, site
         df = (
@@ -128,21 +150,11 @@ class SWDE(Dataset):
         return categories
 
     def to_seed(self):
-        # sample 3 pages from each category, site
-        df = self.df.groupby(["category", "site"]).apply(
-            lambda x: x.sample(
-                n=3,
-                replace=True,
-                random_state=self.random_state,
-            )
-        )
-        df.reset_index(drop=True, inplace=True)
-
         # populate html and query
         ids = []
         htmls = []
         quries = []
-        for i, row in df.iterrows():
+        for i, row in self.seed_df.iterrows():
             category = row["category"]
             site = row["site"]
             page_id = row["page_id"]
@@ -275,3 +287,153 @@ class SWDE(Dataset):
                 )
             )
         return instances
+
+
+class SWDEExpanded(Dataset):
+    def __init__(self, data_folder: str, eval_sample_size: int, seed: int, swde_data_folder="../swde") -> None:
+        super().__init__(data_folder, eval_sample_size)
+        self.random_state = np.random.RandomState(seed)
+        self.swde_data_folder = os.path.join(data_folder, swde_data_folder)
+
+        df = self.read_data()
+        seed_df = df.groupby(["category", "site"]).apply(
+            lambda x: x.sample(
+                n=3,
+                random_state=self.random_state,
+            )
+        )
+        drop_indices = set(i[2] for i in seed_df.index)
+        seed_df.reset_index(drop=True, inplace=True)
+        self.seed_df = seed_df
+        df.drop(drop_indices, inplace=True)
+        df.reset_index(drop=True, inplace=True)
+
+        # sample in group category, site
+        df = (
+            df.groupby(["category", "site"])
+            .apply(
+                lambda x: x.sample(
+                    n=self.eval_sample_size,
+                    random_state=self.random_state,
+                ),
+            )
+            .reset_index(drop=True)
+        )
+        self.df = df
+
+    @property
+    def name(self):
+        return "SWDE_Expanded"
+
+    @property
+    def categories(self):
+        # read categories
+        categories = []
+        for path in Path(self.data_folder).glob("*"):
+            if path.is_dir():
+                categories.append(path.name)
+        return categories
+
+    def get_site_pages(self, category):
+        sites = []
+        source_folder = os.path.join(self.data_folder, category)
+        for path in os.listdir(source_folder):
+            path = path.split("-")[1]
+            site = re.search(r"\w+", path).group()
+            pages = re.search(r"\d+", path).group()
+            sites.append((site, pages))
+        return sites
+
+    def read_data(self):
+        dfs = []
+        for category in self.categories:
+            for site, pages in self.get_site_pages(category):
+                records = []
+                json_path = os.path.join(self.data_folder, category, f"{category}-{site}({pages}).json")
+                data = json.load(open(json_path, "r"))
+
+                fields = set()
+                for page_id, ground_truth in data.items():
+                    # filter ground truth
+                    new_ground_truth = {}
+                    for k, v in ground_truth.items():
+                        if v and not k.startswith("."):
+                            if k.endswith(":"):
+                                k = k[:-1].strip()
+                            new_ground_truth[k] = v
+                            fields.add(k)
+
+                    records.append(
+                        {
+                            "category": category,
+                            "site": site,
+                            "page_id": page_id,
+                            "ground_truth": json.dumps(new_ground_truth, ensure_ascii=False),
+                        }
+                    )
+                fields = sorted(list(fields))
+                query = "Please extract the following fields: " + ", ".join([f"`{field}`" for field in fields])
+
+                df = pd.DataFrame(records)
+                df["query"] = query
+                df['pages'] = pages
+                dfs.append(df)
+        df = pd.concat(dfs)
+        df.reset_index(drop=True, inplace=True)
+        return df
+
+    def __getitem__(self, idx):
+        """
+        using the group index, return a list of instances
+        """
+        category, site = idx.split("_")
+        df = self.df[(self.df["category"] == category) & (self.df["site"] == site)]
+
+        # populate html and ground_truth
+        instances = []
+        for i, row in df.iterrows():
+            page_id = row["page_id"]
+            pages = row["pages"]
+
+            html_path = os.path.join(self.swde_data_folder, "sourceCode/sourceCode", category, f"{category}-{site}({pages})/{page_id}")
+            ground_truth = json.loads(row["ground_truth"])
+            instances.append(
+                Sample(
+                    id=f"{category}_{site}_{page_id}",
+                    html=open(html_path, "r").read(),
+                    ground_truth=ground_truth,
+                )
+            )
+        return instances
+
+    def __len__(self):
+        """how many groups in the dataset"""
+        groups = self.df["category", "site"].drop_duplicates()
+        return len(groups)
+
+    def to_seed(self):
+        # populate html and query
+        ids = []
+        htmls = []
+        for i, row in self.seed_df.iterrows():
+            category = row["category"]
+            site = row["site"]
+            page_id = row["page_id"]
+            pages = row["pages"]
+
+            html_path = os.path.join(self.swde_data_folder, "sourceCode/sourceCode", category, f"{category}-{site}({pages})/{page_id}")
+            with open(html_path, "r") as f:
+                html = f.read()
+            htmls.append(html)
+
+            ids.append(f"{category}_{site}")
+
+        seed_df = pd.DataFrame(
+            {
+                "id": ids,
+                "html": htmls,
+                "query": self.seed_df["query"],
+                "ground_truth": self.seed_df["ground_truth"],
+            }
+        )
+        return SeedDataset(seed_df)
