@@ -20,7 +20,7 @@
 \author{
 Yu Li \\ \\ lijingyu68@gmail.com
 \and
-Bryce Wang \\ Stanford University  \\ brycewang2018@gmail.com
+Bryce Wang\textsuperscript{*} \\ Stanford University  \\ brycewang2018@gmail.com
 \and
 Xinyu Luan \\ \\ xinyuluan0320@gmail.com
 }
@@ -37,11 +37,9 @@ Xinyu Luan \\ \\ xinyuluan0320@gmail.com
 
 \section{Introduction}
 
-Web scraping \cite{khder2021web} automates data extraction from websites, vital for modern fields like Business Intelligence. It excels in gathering structured data from unstructured sources like HTML, especially when machine-readable formats are unavailable. Web scraping provides real-time data, such as pricing from retail sites, and can offer insights into illicit activities like darknet drug markets.
+Web scraping\cite{khder2021web} automates data extraction from websites, vital for modern fields like Business Intelligence. It excels in gathering structured data from unstructured sources like HTML, especially when machine-readable formats are unavailable. Web scraping provides real-time data, such as pricing from retail sites, and can offer insights into illicit activities like darknet drug markets.
 
-The advent of HTML5 \cite{TABARES2021101529} has introduced significant complexities to automated web scraping. These complexities stem from the enhanced capabilities and dynamic nature of HTML5, which require more sophisticated methods to accurately extract and interpret data. To address these challenges, researchers have developed a variety of tools, such as Selenium \cite{selenium}. Which offers a set of application programming interfaces (APIs) to automate web browsers, enabling the extraction of data from web pages. However, program Selenium to extract data from web pages is a time-consuming and error-prone process. The most crucial part is how to locate the target information on the web page. XPath queries provide a solution to this problem by allowing users to navigate the HTML structure of a web page and extract specific elements. But, programming XPath queries is a challenging task, especially for non-technical users.
-
-In addition to web crawling, XPath is also essential for web GUI testing. Web GUI testing involves interacting with web elements to verify that the user interface behaves as expected. XPath queries are used to locate elements on a web page, such as buttons, input fields, and links, which are then interacted with during the testing process. By automating these interactions, testers can efficiently validate the functionality and appearance of web applications across different browsers and devices. The ability to generate accurate and robust XPath queries is crucial for ensuring comprehensive test coverage and reliable test results.
+The advent of HTML5\cite{TABARES2021101529} has introduced significant complexities to automated web scraping. These complexities stem from the enhanced capabilities and dynamic nature of HTML5, which require more sophisticated methods to accurately extract and interpret data. To address these challenges, researchers have developed a variety of tools, such as Selenium\cite{selenium}. Which offers a set of application programming interfaces (APIs) to automate web browsers, enabling the extraction of data from web pages. However, program Selenium to extract data from web pages is a time-consuming and error-prone process. The most crucial part is how to locate the target information on the web page. XPath queries provide a solution to this problem by allowing users to navigate the HTML structure of a web page and extract specific elements. But, programming XPath queries is a challenging task, especially for non-technical users.
 
 The development of Large Language Models (LLM) has emerged as a promising avenue. LLMs, with their advanced natural language processing capabilities, offer a new paradigm for understanding and interacting with web content. AutoWebGLM\cite{lai2024autowebglmlargelanguagemodelbased} demonstrated significant advancements in addressing the complexities of real-world web navigation tasks, particularly in simplifying HTML data representation to enhancing it's capability. By leveraging reinforcement learning and rejection sampling, AutoWebGLM enhanced its ability to comprehend webpages, execute browser operations, and efficiently decompose tasks.
 
@@ -78,17 +76,17 @@ Recent works emphasize the importance of modeling structural context in webpages
 
 Generative approaches further demonstrate the adaptability of LLMs in WebIE. ChatIE \cite{wei2024chatie} reformulates extraction tasks into multi-turn dialogues, improving zero-shot capabilities. Frameworks like NeuScraper \cite{ahluwalia2024leveraginglargelanguagemodels} integrate neural models with HTML structures to enhance data quality, while MIND2WEB \cite{deng2023mind2webgeneralistagentweb} extends these innovations with a dataset and framework for training generalist agents capable of performing diverse tasks across real-world websites.
 
-On the multimodal front, models like GoLLIE \cite{sainz2024gollieannotationguidelinesimprove} and MoEEF \cite{yang2024hypertextentityextractionwebpage} integrate visual and textual data to address domain-specific challenges. GoLLIE aligns annotation guidelines with code generation for better extractions, while MoEEF incorporates hypertext features to boost entity recognition. Vision-based LLMs, such as GPT-4 Vision \cite{fellman-etal-2024-future}, highlight the growing importance of multimodal techniques for processing visually encoded web data.
+On the multimodal front, models like GoLLIE \cite{sainz2024gollieannotationguidelinesimprove} and MoEEF \cite{yang2024hypertextentityextractionwebpage} integrate visual and textual data to address domain-specific challenges. GoLLIE aligns annotation guidelines with code generation for better extractions, while MoEEF incorporates hypertext features to boost entity recognition. Vision-based LLMs, such as GPT-4 Vision\cite{fellman-etal-2024-future}, highlight the growing importance of multimodal techniques for processing visually encoded web data.
 
 \subsection{LLMs and XPaths for Web Information Extraction}
 
-XPath, a language for querying hierarchical document structures, plays a vital role in bridging structured representation with computational modeling. MarkupLM \cite{DBLP:journals/corr/abs-2110-08518} demonstrates how XPath captures the genealogy of DOM nodes, seamlessly integrating textual and markup features for tasks such as Masked Markup Language Modeling (MMLM) and Node Relation Prediction (NRP). These techniques enable dynamic adaptation to complex web layouts, surpassing the limitations of 2D positional embeddings.
+XPath, a language for querying hierarchical document structures, plays a vital role in bridging structured representation with computational modeling. MarkupLM\cite{DBLP:journals/corr/abs-2110-08518} demonstrates how XPath captures the genealogy of DOM nodes, seamlessly integrating textual and markup features for tasks such as Masked Markup Language Modeling (MMLM) and Node Relation Prediction (NRP). These techniques enable dynamic adaptation to complex web layouts, surpassing the limitations of 2D positional embeddings.
 
-XPath generation further extends WebIE capabilities. Tools like TREEX \cite{10.1145/3018661.3018740} and AUTOSCRAPER \cite{huang-etal-2024-autoscraper} employ decision tree learning and progressive HTML traversal to generate reusable extractors, balancing precision and recall for diverse applications such as price comparison and product aggregation. By leveraging the interpretive capabilities of LLMs, these methods scale to diverse web environments, underscoring the synergy between structured document analysis and scalable information extraction.
+XPath generation further extends WebIE capabilities. Tools like TREEX \cite{10.1145/3018661.3018740} and AUTOSCRAPER\cite{huang2024autoscraperprogressiveunderstandingweb} employ decision tree learning and progressive HTML traversal to generate reusable extractors, balancing precision and recall for diverse applications such as price comparison and product aggregation. By leveraging the interpretive capabilities of LLMs, these methods scale to diverse web environments, underscoring the synergy between structured document analysis and scalable information extraction.
 
 \subsection{Summary}
 
-The evolution of WebIE reflects the integration of structural, multimodal, and generative techniques into scalable systems. LLMs and frameworks leveraging DOM structures, multimodal data, and XPath queries have significantly advanced this field, enabling robust and adaptable solutions for dynamic web environments. These advancements collectively highlight the transformative potential of combining pre-trained models, structural embeddings, and domain-specific optimizations in tackling modern WebIE challenges. Future directions should focus on enhancing generalization across unseen web domains and improving multimodal fusion for visually rich webpages.
+The evolution of WebIE reflects the integration of structural, multimodal, and generative techniques into scalable systems. LLMs and frameworks leveraging DOM structures, multimodal data, and XPath queries have significantly advanced this field, enabling robust and adaptable solutions for dynamic web environments. These advancements collectively highlight the transformative potential of combining pre-trained models, structural embeddings, and domain-specific optimizations in tackling modern WebIE challenges. Future directions should focus on enhancing generalization across unseen web domains and improving multimodal fusion for visually rich webpages efficiently.
 
 \begin{figure*}[h]
   \centering
@@ -220,11 +218,11 @@ In our implementation, we limited the number of feedback loop to 3. At the end o
 We use DeepSeek and ChatGPT-4.0 as the primary large language models in our experiments.
 
 \subsubsection{Dataset}
-We use the SWDE \cite{abdin2024phi3technicalreporthighly} (Structured Web Data Extraction) dataset, which includes 90 of websites across 9 domains, in total 20414 web pages.
+We use the SWDE\cite{abdin2024phi3technicalreporthighly} (Structured Web Data Extraction) dataset, which includes 90 of websites across 9 domains, in total 20414 web pages.
 
 \subsubsection{Experimental Parameters}
-We use DeepSeek-Chat as the main model for our XPath Agent. The Number of Seeds is 3 initial seeds are provided to guide query generation and the 
-Sample Size: 32 web pages are sampled per task to evaluate the model’s adaptability and generalizability.
+We use DeepSeek-Chat as the main model for our XPath Agent. The Number of Seeds is 3 initial seeds are provided to guide query generation with a  
+sample size of 32 web pages are sampled per task to evaluate the model’s adaptability and generalizability. 
 
 \subsection{Evaluation Metrics}
 For evaluation, we employ the metrics of precision, recall, F1 score, and accuracy. we utilized a set matching method to calculate the metrics 
@@ -250,10 +248,10 @@ $accuracy=\frac{True Positives}{True Positives + False Positives + False Negativ
     \begin{tabular}{|c|c|c|c|c|}
     \hline
     \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\ \hline
-    DeepSeek V2.5 & 0.5794 & \textbf{0.6764} & 0.8017 & 0.7337 \\ 
-    GPT 4o & 0.5793 & 0.6423 & \textbf{0.8553} & 0.7336 \\
-    Claude 3.0 & 0.6091	& 0.6796 & 0.8546 & \textbf{0.7571} \\
-    Claude 3.5 & \textbf{0.6191} & \textbf{0.6916} & \textbf{0.8551} & \textbf{0.7647} \\ \hline
+    DeepSeek V2.5 & 0.5794 & 0.6764 & 0.8017 & 0.7337 \\ 
+    GPT 4o mini & 0.6613 &0.8056 &0.7868 &0.7961 \\
+    GPT 4o      &\textbf{0.7413} &\textbf{0.8561} &0.8467 &\textbf{0.8514} \\
+    Claude 3.5  & 0.6191 & 0.6916 & \textbf{0.8551} & 0.7647 \\ \hline
     \end{tabular}
   \end{center}
   \caption{Experimental Results}
@@ -263,7 +261,7 @@ DeepSeek is strong in precision, making it good at avoiding irrelevant data. GPT
     
 
 \subsection{Comparative Analysis} 
-The AutoCrawler \cite{huang2024autoscraperprogressiveunderstandingweb} framework focuses on generating web crawlers for extracting specific information from semi-structured HTML. 
+The AutoCrawler\cite{huang2024autoscraperprogressiveunderstandingweb} framework focuses on generating web crawlers for extracting specific information from semi-structured HTML. 
 It is designed with a two-phase approach: the first phase uses a progressive generation framework that leverages the hierarchical 
 structure of HTML pages, while the second phase employs a synthesis framework that improves crawler performance by learning from 
 multiple web pages. 
