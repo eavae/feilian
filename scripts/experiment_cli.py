@@ -21,7 +21,7 @@ from minify_html import minify
 from collections import defaultdict
 
 from feilian.models import check_model
-from feilian.datasets import SWDE, Dataset, Sample
+from feilian.datasets import SWDE, Dataset, Sample, SWDEExpanded
 from feilian.etree_tools import normalize_text, parse_html, extract_text_by_xpath
 
 ablation_options = {
@@ -39,6 +39,8 @@ model_mapping = {
 def create_dataset(dataset: str, data_dir: str, **kwargs):
     if dataset == "SWDE":
         return SWDE(data_dir, **kwargs)
+    elif dataset == "SWDE_Expanded":
+        return SWDEExpanded(data_dir, **kwargs)
 
     raise ValueError(f"Dataset {dataset} not supported, please choose from SWDE, SWDE_Extended")
 
@@ -220,7 +222,7 @@ def run_experiment(dataset: Dataset, args, epsilon=1e-8):
 
 def main():
     parser = argparse.ArgumentParser(description="Cmd Line Tool for running experiments")
-    parser.add_argument("--dataset", required=True, choices=["SWDE", "SWDE_Extended"], help="Dataset to use")
+    parser.add_argument("--dataset", required=True, choices=["SWDE", "SWDE_Expanded"], help="Dataset to use")
     parser.add_argument("--data_dir", default="data/swde", help="Data folder")
     parser.add_argument("--ie_model", required=True, help="Information extraction model")
     parser.add_argument("--program_model", required=True, help="Program model")

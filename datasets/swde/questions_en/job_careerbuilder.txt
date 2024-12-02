@@ -1,9 +1,1 @@
-What are the company name, location, and job titles listed in the job overview section? Please provide the answer in JSON format with the keys `company`, `location`, and `title`.
-
-```json
-{
-  "company": ["..."],
-  "location": ["..."],
-  "title": ["..."]
-}
-```
+What are the company name (`company`), location (`location`), and job titles (`title`) listed in the job overview section?

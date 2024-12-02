@@ -1,0 +1,10 @@
+Please provide the JSON representation of the name, phone number, type, and website of the institution described in the context. The JSON should be formatted as follows:
+
+```json
+{
+  "name": ["..."],
+  "phone": ["..."],
+  "type": ["..."],
+  "website": ["..."]
+}
+```

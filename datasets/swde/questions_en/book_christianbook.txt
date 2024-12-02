@@ -1,11 +1,1 @@
-Given the context provided, please provide the details of the book in JSON format. The JSON should include the following keys: `author`, `isbn_13`, `publication_date`, `publisher`, and `title`.
-
-```json
-{
-  "author": ["..."],
-  "isbn_13": ["..."],
-  "publication_date": ["..."],
-  "publisher": ["..."],
-  "title": ["..."]
-}
-```
+请提供书籍的作者(`author`)、ISBN-13(`isbn_13`)、出版日期(`publication_date`)、出版社(`publisher`)和书名(`title`)。

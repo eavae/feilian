@@ -1,8 +1,1 @@
-What is the height, name, and weight of the player described in the context, formatted as JSON?
-
-JSON:
-{
-  "height": ["..."],
-  "name": ["..."],
-  "weight": ["..."]
-}
+What is the height(`height`), name(`name`), and weight(`weight`) of the player described in the context?

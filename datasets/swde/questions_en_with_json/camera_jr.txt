@@ -1,0 +1,8 @@
+Based on the provided context, please provide the model (product name), and price of the product in JSON format.
+
+```json
+{
+  "model": ["..."],
+  "price": ["..."]
+}
+```

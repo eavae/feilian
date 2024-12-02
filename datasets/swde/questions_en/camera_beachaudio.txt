@@ -1,9 +1,1 @@
-What is the JSON representation of the manufacturer, model (aka product name), and price of the digital camera described in the context?
-
-```json
-{
-  "manufacturer": ["..."],
-  "model": ["..."],
-  "price": ["..."]
-}
-```
+What is the JSON representation of the manufacturer (`manufacturer`), model (`model`), and price (`price`) of the digital camera described in the context?

@@ -1,10 +1,1 @@
-Please provide the details of the product in JSON format, including the manufacturer, model (product name), and price.
-
-JSON:
-```json
-{
-  "manufacturer": ["..."],
-  "model": ["..."],
-  "price": ["..."]
-}
-```
+Please provide the details of the product, including the manufacturer(`manufacturer`), model (product name)(`model`), and price(`price`).

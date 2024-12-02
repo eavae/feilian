@@ -1,0 +1,11 @@
+What are the specifications of the book described in the context, including author, isbn number, publisher, publication date and title, formatted as a JSON object?
+
+```json
+{
+  "author": ["..."],
+  "isbn_13": ["..."],
+  "publication_date": ["..."],
+  "title": ["..."],
+  "publisher": ["...]
+}
+```

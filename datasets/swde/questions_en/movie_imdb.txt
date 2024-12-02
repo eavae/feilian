@@ -1,10 +1,1 @@
-What is the JSON representation of the director, genre, MPAA rating, and title of the film described in the context?
-
-```json
-{
-  "director": ["..."],
-  "genre": ["...", "...", "..."],
-  "mpaa_rating": ["..."],
-  "title": ["..."]
-}
-```
+What is the JSON representation of the director(`director`), genre(`genre`), MPAA rating(`mpaa_rating`), and title(`title`) of the film described in the context?

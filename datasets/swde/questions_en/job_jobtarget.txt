@@ -8,3 +8,16 @@ What is the JSON representation of the job posting details from the provided con
   "title": ["..."]
 }
 ```
+
+回答：What is the JSON representation of the job posting details from the provided context?
+
+```json
+{
+  "company": ["..."],
+  "date_posted": ["..."],
+  "location": ["..."],
+  "title": ["..."]
+}
+```
+
+回答：请提供职位发布的公司(`company`)、发布日期(`date_posted`)、地点(`location`)和职位名称(`title`)。

@@ -1,10 +1,1 @@
-What is the height, name, team, and weight of the player in the following JSON format?
-
-```json
-{
-  "height": [""],
-  "name": [""],
-  "team": [""],
-  "weight": [""]
-}
-```
+What is the height(`height`), name(`name`), team(`team`), and weight(`weight`) of the player?

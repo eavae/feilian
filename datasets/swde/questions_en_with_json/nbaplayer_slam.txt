@@ -1,0 +1,10 @@
+What is the height, name, team, and weight of the player in JSON format?
+
+```json
+{
+  "height": ["..."],
+  "name": ["..."],
+  "team": ["..."],
+  "weight": ["..."]
+}
+```

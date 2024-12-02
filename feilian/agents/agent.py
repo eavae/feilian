@@ -232,7 +232,7 @@ def program_xpath_node(state: State):
         # prune html tree by extract xpath
         extraction_based_pruning(tree, extract_xpath)
         clean_html(tree)
-        cleaned_html = to_string(tree, pretty_print=True)
+        cleaned_html = to_string(tree)
 
         html_snippets.append(
             {
@@ -249,7 +249,7 @@ def program_xpath_node(state: State):
         return dict(xpaths={field_name: None})
 
     base_input = format_snippets(html_snippets)
-    session_id = "_".join([snippet["id"] for snippet in state["snippets"]])
+    session_id = "_".join([snippet["id"] for snippet in state["snippets"]]) + f"_{field_name}"
     config = {"configurable": {"session_id": session_id}}
     field_xpath = program_xpath_chat_chain.invoke({"input": base_input}, config=config)
     feedbacks = get_feedbacks(state["snippets"], field_name, field_xpath, trees)

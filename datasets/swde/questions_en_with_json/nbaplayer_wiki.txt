@@ -1,0 +1,10 @@
+What is the height, weight, team name, and what position does he play in basketball? Please provide the answer in JSON format.
+
+```json
+{
+  "height": ["..."],
+  "weight": ["..."],
+  "team": ["..."],
+  "position": ["..."]
+}
+```

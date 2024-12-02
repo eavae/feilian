@@ -1,0 +1,11 @@
+Please provide the name, phone number, type, and website of the institution in JSON format.
+
+JSON:
+```json
+{
+  "name": ["..."],
+  "phone": ["..."],
+  "type": ["..."],
+  "website": ["..."]
+}
+```
