@@ -372,7 +372,7 @@ class SWDEExpanded(Dataset):
                         }
                     )
                 fields = sorted(list(fields))
-                query = "Please extract the following fields: " + ", ".join([f"`{field}`" for field in fields])
+                query = "Please extract the following fields: " + ", ".join([f"`{field}` of the {category}" for field in fields])
 
                 df = pd.DataFrame(records)
                 df["query"] = query
