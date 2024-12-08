@@ -19,6 +19,7 @@ from hashlib import md5
 from typing import List
 from minify_html import minify
 from collections import defaultdict
+from copy import deepcopy
 
 from feilian.models import check_model
 from feilian.datasets import SWDE, Dataset, Sample, SWDEExpanded
@@ -27,6 +28,7 @@ from feilian.etree_tools import normalize_text, parse_html, extract_text_by_xpat
 ablation_options = {
     "wo_cue": "WITHOUT_CUE",
     "wo_gen_xpath": "WITHOUT_GEN_XPATH",
+    "w_ground_truth": "WITH_GROUND_TRUTH",
     "none": None,
 }
 
@@ -171,6 +173,7 @@ def run_experiment(dataset: Dataset, args, epsilon=1e-8):
             result["id"] = id
             ie_eval_results.append(result)
 
+    using_ground_truth = os.environ.get("ABLATION_EXPERIMENT", None) == "WITH_GROUND_TRUTH"
     for id, seed in tqdm.tqdm(seed_dataset, total=len(seed_dataset), desc="Generating XPaths"):
         output_file = os.path.join(experiment_folder, f"{seed.id}.json")
         if os.path.exists(output_file):
@@ -191,13 +194,30 @@ def run_experiment(dataset: Dataset, args, epsilon=1e-8):
             "xpaths": {},
             "fields": [],
         }
-        new_state = graph.invoke(state)
+        thread = {"configurable": {"thread_id": id}}
+        for event in graph.stream(state, thread, stream_mode="values"):
+            is_finish_stage1 = all(len(s['data']) for s in event['snippets'])
+            is_finish_stage2 = len(event['xpaths']) == len(event['fields']) and len(event['xpaths']) > 0
+
+            # relace the value to ground truth
+            if is_finish_stage1 and not is_finish_stage2 and using_ground_truth:
+                new_state = deepcopy(event)
+                for i, (snippet, ground_truth) in enumerate(zip(event["snippets"], seed.ground_truth)):
+                    x = new_state["snippets"][i]
+                    for key, value in ground_truth.items():
+                        if key not in snippet["data"]:
+                            x["data"][key] = {"value": value}
+                            continue
+                        x["data"][key]["value"] = value
+
+                # update the state
+                graph.update_state(thread, new_state)
 
         with open(output_file, "w") as f:
-            for snippet in new_state["snippets"]:
+            for snippet in event["snippets"]:
                 del snippet["raw_html"]
-            f.write(json.dumps(new_state, ensure_ascii=False, indent=4))
-        collect_result(seed.id, new_state, seed.ground_truth)
+            f.write(json.dumps(event, ensure_ascii=False, indent=4))
+        collect_result(seed.id, event, seed.ground_truth)
     ie_overall = ie_evaluator.to_json()
     ie_overall["id"] = "overall"
     ie_eval_results.append(ie_overall)

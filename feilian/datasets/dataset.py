@@ -177,7 +177,7 @@ class SWDE(Dataset):
                 "id": ids,
                 "html": htmls,
                 "query": quries,
-                "ground_truth": df["ground_truth"],
+                "ground_truth": self.seed_df["ground_truth"],
             }
         )
         return SeedDataset(seed_df)

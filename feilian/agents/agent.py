@@ -82,7 +82,8 @@ def information_extraction_node(state: State) -> State:
         cue_text = value_object.get("cue_text", "")
         if isinstance(cue_text, list):
             cue_texts = [t for t in cue_text if t.strip()]
-            value_object["cue_text"] = cue_texts[0]
+            if cue_texts:
+                value_object["cue_text"] = cue_texts[0]
 
     return {
         "snippets": [
@@ -316,6 +317,10 @@ def fanout_to_program_xpath(state: State):
 
 
 def build_graph(memory=None):
+    if memory is None:
+        from langgraph.checkpoint.memory import MemorySaver
+
+        memory = MemorySaver()
     builder = StateGraph(State)
 
     # add nodes
