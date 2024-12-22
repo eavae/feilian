@@ -9,6 +9,7 @@
 \usepackage{tcolorbox}
 \usepackage{listings}
 \usepackage[utf8]{inputenc}
+\usepackage{colortbl}
 
 \bibliographystyle{plain} 
 % \setcitestyle{authoryear,open={(},close={)}}
@@ -244,16 +245,28 @@ $accuracy=\frac{True Positives}{True Positives + False Positives + False Negativ
 \subsection{Statistical Analysis}
 
 \begin{table*}[h]
-  \begin{center}
-    \begin{tabular}{|c|c|c|c|c|}
+  % \begin{center}
+  \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
     \hline
-    \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\ \hline
-    DeepSeek V2.5 & 0.5794 & 0.6764 & 0.8017 & 0.7337 \\ 
-    GPT 4o mini & 0.6613 &0.8056 &0.7868 &0.7961 \\
-    GPT 4o      &\textbf{0.7413} &\textbf{0.8561} &0.8467 &\textbf{0.8514} \\
-    Claude 3.5  & 0.6191 & 0.6916 & \textbf{0.8551} & 0.7647 \\ \hline
+    \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Correct} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\ \hline
+    \multicolumn{5}{|c|}{\cellcolor{yellow!30}Xpath Agent} & \multicolumn{4}{|c|}{\cellcolor{cyan!20} Auto Scraper}\\ \hline
+    Deepseek V2.4       & 0.6312 & 0.7484 & 0.8012 & 0.7739       & & & &  \\
+    DeepSeek V2.5       & 0.5794 & 0.6764 & 0.8017 & 0.7337       & & & & \\ 
+    GPT 4o mini         & 0.6613 & 0.8056 & 0.7868 & 0.7961       & 0.6206 & 0.9176 & 0.7810 & 0.7697 \\
+    GPT 4o              &\textbf{0.7413} &\textbf{0.8561} &0.8467 &\textbf{0.8514}            & & & & \\
+    GPT 3.5 Turbo       & & & &                                   & 0.5484 & 0.8585 & 0.7334 & 0.6920 \\
+    GPT 4.0 Turbo       & & & &                                   & 0.7156 & 0.9249 & 0.8913 & 0.8869 \\
+    Claude 3-5 haiku    & 0.6123 & 0.6845 & 0.8530 & 0.7595       & & & & \\
+    Claude 3-5 sonnet   & 0.6191 & 0.6916 & 0.8551 & 0.7647       & & & & \\
+    Claude 3 opus       & 0.6112 & 0.6838 & 0.8520 & 0.7587       & & & & \\
+    Claude 3 sonnet     & 0.6091 & 0.6796 & 0.8546 & 0.7571       & & & & \\
+    Gemini 1.5 flash    & 0.3746 & 0.4152 & 0.7930 & 0.5450       & & & & \\
+    Gemini 1.5 pro      & 0.6306 & 0.7454 & 0.8037 & 0.7735       & 0.4281 & 0.8570 & 0.5754 & 0.7491 \\
+
+    \hline
     \end{tabular}
-  \end{center}
+
   \caption{Experimental Results}
 \end{table*}
     
